@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Butiran Perisian - {{ software.name }} | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <a href="{{ url_for('aset_tidak_ketara') }}" class="btn btn-sm btn-outline-secondary mb-2 rounded-pill px-3 shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Kembali ke Senarai Perisian
+        </a>
+        {% if session.get('role') in ['admin', 'superadmin'] %}
+        <button type="button" class="btn btn-sm btn-outline-success mb-2 ms-2 rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#tambahKuotaModal">
+            <i class="bi bi-plus-circle me-1"></i> Tambah Kuota Lesen
+        </button>
+        {% endif %}
+        <h2 class="fw-bold mb-0" style="color:var(--text-primary);">{{ software.name }}</h2>
+        <p class="text-muted mb-0 mt-1">
+            <i class="bi {{ software.icon_class }} me-1" style="color:{{ software.text_color }};"></i>
+            {{ software.description }}
+        </p>
+    </div>
+</div>
+
+<!-- Modal Tambah Kuota -->
+<div class="modal fade" id="tambahKuotaModal" tabindex="-1" aria-labelledby="tambahKuotaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold" id="tambahKuotaModalLabel">Tambah Kuota Lesen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('add_software_quota', id=software.id) }}" method="POST">
+                <div class="modal-body py-0">
+                    <p class="text-muted small mb-3">Sila masukkan jumlah lesen baharu yang ingin ditambah ke dalam kuota sedia ada.</p>
+                    <div class="mb-3">
+                        <label for="jumlah_lesen" class="form-label fw-semibold">Jumlah Lesen untuk Ditambah</label>
+                        <input type="number" class="form-control" id="jumlah_lesen" name="jumlah_lesen" min="1" value="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4">Tambah Kuota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% set is_registered = assigned_users | selectattr("user_id", "equalto", session.get('user_id')) | list | length > 0 %}
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="border-radius:15px; background:linear-gradient(135deg, rgba(25,135,84,0.1) 0%, rgba(25,135,84,0.05) 100%);">
+            <div class="card-body p-4 text-center">
+                <h6 class="text-success text-uppercase fw-bold mb-2">Lesen Sedia Ada (Total)</h6>
+                {% if session.get('role') in ['admin', 'superadmin'] %}
+                <h2 class="display-4 fw-bold text-success mb-0">{{ software.total_licenses }}</h2>
+                {% else %}
+                <p class="text-success mb-0 fw-semibold mt-3" style="font-size: 0.9rem;">Sila ke STM untuk info lebih lanjut</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="border-radius:15px; background:linear-gradient(135deg, rgba(220,53,69,0.1) 0%, rgba(220,53,69,0.05) 100%);">
+            <div class="card-body p-4 text-center">
+                <h6 class="text-danger text-uppercase fw-bold mb-2">Lesen Digunakan</h6>
+                {% if session.get('role') in ['admin', 'superadmin'] %}
+                <h2 class="display-4 fw-bold text-danger mb-0">{{ used_licenses }}</h2>
+                {% else %}
+                <p class="text-danger mb-0 fw-bold mt-3 fs-5">{{ 'Sedang Menggunakan' if is_registered else 'Belum Berdaftar' }}</p>
+                {% if not is_registered %}
+                <div class="mt-3">
+                    <a href="{{ url_for('create_ticket', category='Software', title='Permohonan Perisian: ' ~ software.name, description='Saya memohon lesen perisian untuk ' ~ software.name ~ '.') }}" class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm fw-bold">
+                        <i class="bi bi-cloud-arrow-down me-1"></i> Mohon Perisian
+                    </a>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100" style="border-radius:15px; background:linear-gradient(135deg, rgba(56,145,220,0.1) 0%, rgba(56,145,220,0.05) 100%);">
+            <div class="card-body p-4 text-center">
+                <h6 class="text-primary text-uppercase fw-bold mb-2">Baki Lesen</h6>
+                {% if session.get('role') in ['admin', 'superadmin'] %}
+                <h2 class="display-4 fw-bold text-primary mb-0">{{ available_licenses }}</h2>
+                {% else %}
+                <p class="text-primary mb-0 fw-semibold mt-3" style="font-size: 0.9rem;">Sila ke STM untuk info lebih lanjut</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4 bg-white" style="border-radius: 15px;">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center" style="border-radius: 15px 15px 0 0;">
+        <h5 class="m-0 fw-bold text-dark">
+            <i class="bi bi-people-fill me-2 text-primary"></i> Pengguna Berdaftar
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted" style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px;">
+                    <tr>
+                        <th class="ps-4 py-3 border-0">Nama Pengguna</th>
+                        <th class="py-3 border-0">Jabatan / Bahagian</th>
+                        <th class="py-3 border-0">Tarikh Daftar</th>
+                        {% if session.get('role') in ['admin', 'superadmin'] %}
+                        <th class="py-3 border-0 text-end pe-4">Tindakan</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set visible_users = assigned_users if session.get('role') in ['admin', 'superadmin'] else assigned_users | selectattr("user_id", "equalto", session.get('user_id')) | list %}
+                    {% for su in visible_users %}
+                    <tr>
+                        <td class="ps-4 py-3 fw-semibold text-dark">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center bg-secondary text-white" style="width:32px; height:32px; font-size:0.8rem;">
+                                    {{ (su.user.full_name or su.user.username)[:2].upper() }}
+                                </div>
+                                <div>
+                                    <div class="mb-0">{{ su.user.full_name or su.user.username }}</div>
+                                    <div class="text-muted" style="font-size:0.75rem;">{{ su.user.email_address or '' }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 text-muted" style="font-size:0.9rem;">{{ su.user.department or '—' }}</td>
+                        <td class="py-3 text-muted" style="font-size:0.9rem;">{{ su.assigned_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+                        
+                        {% if session.get('role') in ['admin', 'superadmin'] %}
+                        <td class="py-3 text-end pe-4">
+                            <a href="{{ url_for('print_software_form', id=software.id, user_id=su.user_id) }}" target="_blank" class="btn btn-sm btn-outline-secondary shadow-sm rounded-pill px-3 me-2">
+                                <i class="bi bi-printer me-1"></i> Cetak
+                            </a>
+                            <form action="{{ url_for('remove_software_user', id=software.id, user_id=su.user_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Adakah anda pasti mahu membuang lesen pengguna ini?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm rounded-pill px-3">
+                                    <i class="bi bi-trash3 me-1"></i> Buang
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-person-x fs-1 d-block mb-2 opacity-50"></i>
+                            Tiada pengguna didaftarkan untuk lesen perisian ini.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if session.get('role') in ['admin', 'superadmin'] %}
+<div class="card shadow-sm border-0 bg-light" style="border-radius: 15px; border-left: 4px solid var(--primary-color) !important;">
+    <div class="card-body p-4">
+        <h5 class="fw-bold text-dark mb-3">
+            <i class="bi bi-person-plus-fill me-2 text-primary"></i> Tambah Pengguna Baharu
+        </h5>
+        
+        {% if available_licenses > 0 %}
+        <form action="{{ url_for('add_software_user', id=software.id) }}" method="POST" class="row g-3 align-items-end">
+            <div class="col-md-8">
+                <label for="user_id" class="form-label text-muted small fw-semibold">
+                    Cari Pengguna <span class="text-muted fw-normal">(nama, jabatan, gred...)</span>
+                </label>
+                <select class="form-select shadow-sm" id="user_id" name="user_id" required placeholder="Taip untuk cari...">
+                    <option value=""></option>
+                    {% for user in available_users %}
+                    <option value="{{ user.id }}"
+                        data-name="{{ user.full_name or user.username }}"
+                        data-dept="{{ user.department or '' }}"
+                        data-grade="{{ user.working_grade or '' }}">
+                        {{ user.full_name or user.username }} ({{ user.department or 'Tiada Jabatan' }}){% if user.working_grade %} — {{ user.working_grade }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100 shadow-sm fw-bold">
+                    <i class="bi bi-plus-circle me-1"></i> Tambah Lesen
+                </button>
+            </div>
+        </form>
+        {% else %}
+        <div class="alert alert-danger mb-0 border-0 shadow-sm d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+            <div>
+                <strong>Perhatian:</strong> Tiada lesen yang tinggal untuk perisian ini. Sila buang pengguna sedia ada atau tambah had kuota lesen.
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Tom Select for searchable user dropdown -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const el = document.getElementById('user_id');
+    if (el) {
+        new TomSelect(el, {
+            placeholder: 'Taip nama, jabatan atau gred...',
+            searchField: ['text'],
+            maxOptions: 100,
+            render: {
+                option: function(data, escape) {
+                    return `<div class="d-flex flex-column py-1">
+                        <span class="fw-semibold">${escape(data.text.split(' (')[0])}</span>
+                        <small class="text-muted">${escape(data.text.match(/\(([^)]+)\)/)?.[1] || '')}</small>
+                    </div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                }
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

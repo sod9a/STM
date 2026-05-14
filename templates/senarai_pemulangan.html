@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Senarai Pemulangan | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="fw-bold mb-0" style="color:var(--text-primary);">Senarai Pemulangan</h2>
+        <p class="text-muted mb-0 mt-1">
+            <i class="bi bi-card-list me-1"></i>
+            Semua rekod pemulangan — yang belum dan yang telah dipulangkan
+        </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <div class="input-group input-group-sm" style="width: 250px;">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="pemulanganSearch" class="form-control border-start-0 ps-0" placeholder="Cari nama, aset, tarikh...">
+        </div>
+        <a href="{{ url_for('pemulangan') }}" class="btn btn-primary">
+            <i class="bi bi-arrow-return-left me-1"></i> Proses Pemulangan
+        </a>
+    </div>
+</div>
+
+<div class="card border-0" style="border-radius:20px; box-shadow:0 4px 24px rgba(255,193,7,0.08);">
+    <div class="card-body p-0">
+        {% if rekod %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="pemulanganTable">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-3">ID</th>
+                        <th class="py-3">Aset</th>
+                        <th class="py-3">Kuantiti</th>
+                        {% if session.get('role') in ['admin','superadmin'] %}
+                        <th class="py-3">Peminjam</th>
+                        {% endif %}
+                        <th class="py-3">Tarikh Pinjam</th>
+                        <th class="py-3">Tarikh Pulang (Dijangka)</th>
+                        <th class="py-3">Baki / Status Pulangan</th>
+                        <th class="py-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in rekod %}
+                    {% set p = entry.item %}
+                    {% set days = entry.days_left %}
+                    <tr style="cursor:pointer;" onclick="window.location='{{ url_for('view_peminjaman', id=p.id) }}'" class="table-row-clickable search-row">
+                        <td class="px-4 py-3 text-muted small fw-semibold">#{{ p.id }}</td>
+                        <td class="py-3 fw-semibold" style="font-size:0.9rem;">{{ p.aset }}</td>
+                        <td class="py-3" style="font-size:0.85rem;">{{ p.quantity or 1 }}</td>
+                        {% if session.get('role') in ['admin','superadmin'] %}
+                        <td class="py-3" style="font-size:0.85rem;">{{ p.user.full_name or p.user.username }}</td>
+                        {% endif %}
+                        <td class="py-3" style="font-size:0.85rem;">{{ p.borrow_date.strftime('%d/%m/%Y') }}</td>
+                        <td class="py-3" style="font-size:0.85rem;">{{ p.return_date.strftime('%d/%m/%Y') if p.return_date else '—' }}</td>
+                        <td class="py-3" style="font-size:0.85rem;">
+                            {% if p.status == 'Returned' %}
+                                <span style="color:#2da55e;font-weight:600;"><i class="bi bi-check-circle me-1"></i>Telah dipulangkan</span>
+                            {% elif days is not none %}
+                                {% if days < 0 %}
+                                    <span style="color:#dc3545;font-weight:700;"><i class="bi bi-exclamation-triangle me-1"></i>Tertunggak {{ (-days) }} hari</span>
+                                {% elif days == 0 %}
+                                    <span style="color:#dc3545;font-weight:700;"><i class="bi bi-alarm me-1"></i>Perlu pulang hari ini!</span>
+                                {% elif days <= 3 %}
+                                    <span style="color:#c9960c;font-weight:600;"><i class="bi bi-clock me-1"></i>{{ days }} hari lagi</span>
+                                {% else %}
+                                    <span style="color:var(--text-muted);">{{ days }} hari lagi</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3">
+                            {% if p.status == 'Approved' %}
+                            <span class="badge rounded-pill px-3 py-2" style="background:rgba(56,145,220,0.1);color:#3891dc;font-size:0.75rem;">
+                                <i class="bi bi-hourglass-split me-1"></i>Belum Pulang
+                            </span>
+                            {% elif p.status == 'Returned' %}
+                            <span class="badge rounded-pill px-3 py-2" style="background:rgba(56,193,114,0.1);color:#2da55e;font-size:0.75rem;">
+                                <i class="bi bi-check2-circle me-1"></i>Sudah Pulang
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr id="noResultsRow" style="display: none;">
+                        <td colspan="{% if session.get('role') in ['admin', 'superadmin'] %}8{% else %}7{% endif %}" class="text-center py-5 text-muted">
+                            <i class="bi bi-search fs-1 d-block mb-3 opacity-50"></i>
+                            Tiada rekod sepadan dengan carian anda.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5" style="color:var(--text-muted);">
+            <i class="bi bi-arrow-return-left d-block fs-1 mb-3 opacity-25"></i>
+            <div class="fw-semibold mb-1">Tiada rekod pemulangan</div>
+            <div class="small">Belum ada aset yang sedang dipinjam atau telah dipulangkan.</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Summary footer -->
+{% if rekod %}
+{% set belum = rekod | selectattr('item.status','equalto','Approved') | list %}
+{% set sudah = rekod | selectattr('item.status','equalto','Returned') | list %}
+{% set tertunggak = [] %}
+{% for e in belum %}{% if e.days_left is not none and e.days_left < 0 %}{% set _ = tertunggak.append(e) %}{% endif %}{% endfor %}
+<div class="d-flex gap-3 mt-3 flex-wrap">
+    <div class="px-3 py-2 rounded-3" style="background:rgba(56,145,220,0.08);font-size:0.82rem;">
+        <span style="color:#3891dc;font-weight:600;">{{ belum | length }}</span>
+        <span style="color:var(--text-muted);"> belum dipulangkan</span>
+    </div>
+    <div class="px-3 py-2 rounded-3" style="background:rgba(56,193,114,0.08);font-size:0.82rem;">
+        <span style="color:#2da55e;font-weight:600;">{{ sudah | length }}</span>
+        <span style="color:var(--text-muted);"> sudah dipulangkan</span>
+    </div>
+    {% if tertunggak | length > 0 %}
+    <div class="px-3 py-2 rounded-3" style="background:rgba(220,53,69,0.08);font-size:0.82rem;">
+        <span style="color:#dc3545;font-weight:700;">{{ tertunggak | length }}</span>
+        <span style="color:var(--text-muted);"> tertunggak!</span>
+    </div>
+    {% endif %}
+    <div class="px-3 py-2 rounded-3" style="background:rgba(0,0,0,0.04);font-size:0.82rem;">
+        <span style="color:var(--text-primary);font-weight:600;">{{ rekod | length }}</span>
+        <span style="color:var(--text-muted);"> jumlah keseluruhan</span>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('pemulanganSearch');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('.search-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(query)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const noResults = document.getElementById('noResultsRow');
+        if (noResults) {
+            noResults.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

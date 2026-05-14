@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Kes Terdahulu | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold mb-0">Kes Terdahulu</h2>
+        <p class="text-muted">Sejarah semua tiket yang telah diselesaikan atau tiket aktif dari hari-hari sebelumnya.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <h5 class="m-0 fw-bold"><i class="bi bi-archive me-2"></i> Pustaka Arkib</h5>
+        <div class="d-flex align-items-center gap-3">
+            <div class="input-group input-group-sm" style="max-width: 300px;">
+                <span class="input-group-text border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="archiveSearch" class="form-control border-start-0 ps-0" placeholder="Cari nama, tiket, kategori...">
+            </div>
+            <span class="badge bg-secondary rounded-pill px-3">{{ tickets|length }} Jumlah</span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 custom-table" id="archiveTable">
+            <thead class="small text-uppercase">
+                <tr>
+                    <th scope="col" class="ps-4" style="width: 80px;">ID Tiket</th>
+                    <th scope="col" style="width: 130px;">Status</th>
+                    <th scope="col" style="width: 120px;">Kategori</th>
+                    <th scope="col">Ringkasan Isu</th>
+                    {% if session.get('role') in ['admin', 'superadmin'] %}
+                    <th scope="col" style="width: 150px;">Pengarang</th>
+                    {% endif %}
+                    <th scope="col" style="width: 200px;">Waktu Dibuat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if tickets %}
+                {% for ticket in tickets %}
+                <tr class="archive-row" style="cursor: pointer;"
+                    onclick="window.location.href='{{ url_for('view_ticket', id=ticket.id) }}';">
+                    <td class="ps-4 fw-bold text-muted">#{{ ticket.id }}</td>
+                    <td>
+                        {% if ticket.status == 'Closed' %}
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill">
+                            Ditutup
+                        </span>
+                        {% elif ticket.status == 'Open' %}
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">
+                            Aktif
+                        </span>
+                        {% else %}
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill">
+                            {{ ticket.status }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span
+                            class="category-pill category-{{ ticket.category|lower if ticket.category != 'Lain-lain' else 'others' }}">
+                            <i class="bi bi-tag-fill small opacity-50"></i>
+                            {{ ticket.category }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ ticket.title }}</div>
+                        <div class="small text-muted text-truncate" style="max-width: 300px;">{{ ticket.description }}
+                        </div>
+                    </td>
+                    {% if session.get('role') in ['admin', 'superadmin'] %}
+                    <td class="small fw-bold text-secondary">
+                        {{ ticket.author.username if ticket.author else 'Legacy' }}
+                    </td>
+                    {% endif %}
+                    <td class="text-muted small">{{ ticket.created_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                </tr>
+                {% endfor %}
+                <tr id="noResultsRow" style="display: none;">
+                    <td colspan="{% if session.get('role') in ['admin', 'superadmin'] %}6{% else %}5{% endif %}" class="text-center py-5 text-muted">
+                        <i class="bi bi-search fs-1 d-block mb-3 opacity-50"></i>
+                        Tiada rekod sepadan dengan carian anda.
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{% if session.get('role') in ['admin', 'superadmin'] %}6{% else %}5{% endif %}"
+                        class="text-center py-5 text-muted">
+                        <i class="bi bi-archive fs-1 d-block mb-3 opacity-50"></i>
+                        Tiada tiket ditutup dijumpai.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('archiveSearch');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('.archive-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(query)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const noResults = document.getElementById('noResultsRow');
+        if (noResults) {
+            noResults.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

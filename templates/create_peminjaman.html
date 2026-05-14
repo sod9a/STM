@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+
+{% block title %}Mohon Pinjaman | Meja Bantuan STM{% endblock %}
+
+{% block extra_css %}
+<!-- Tom Select -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<style>
+    /* Styling to match the screenshot */
+    .page-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .page-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        text-transform: uppercase;
+    }
+    .breadcrumb-custom {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+    .card-custom {
+        background-color: var(--bg-card);
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1.5px solid var(--border-card);
+    }
+    .section-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 1rem;
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .form-label {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    .form-control, .form-select {
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-input);
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        padding: 10px 12px;
+    }
+    .form-control[readonly] {
+        background-color: var(--bg-body);
+        color: var(--text-muted);
+    }
+    .required-asterisk {
+        color: #e53e3e;
+    }
+    .submit-btn {
+        background-color: #5a4bce; /* purple from screenshot */
+        color: white;
+        font-weight: 500;
+        padding: 10px 20px;
+        border-radius: 4px;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .submit-btn:hover {
+        background-color: #4b3eb0;
+        color: white;
+    }
+    .footer-action-bar {
+        background-color: var(--bg-card);
+        padding: 15px 20px;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1.5px solid var(--border-card);
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header-row mt-3">
+    <div class="page-title">TAMBAH PERMINTAAN PINJAMAN BAHARU</div>
+</div>
+
+<form action="{{ url_for('create_peminjaman') }}" method="POST">
+    <div class="card card-custom mb-3">
+        <div class="section-title">
+            <i class="bi bi-info-circle"></i> Maklumat permintaan
+        </div>
+        <div class="card-body p-4">
+            
+            <!-- Row 1 -->
+            <div class="row mb-4" id="pemohon-row">
+                {% if session.get('role') in ['admin', 'superadmin'] %}
+                <!-- Admin: searchable user picker -->
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Mohon Bagi Pihak <span class="required-asterisk">*</span>
+                        <span class="text-muted fw-normal small">(Cari nama, jabatan atau gred)</span>
+                    </label>
+                    <select id="behalf_user_select" name="behalf_user_id" required placeholder="Taip untuk cari pengguna...">
+                        <option value=""></option>
+                        {% for u in all_users %}
+                        <option value="{{ u.id }}"
+                            data-dept="{{ u.department or '' }}"
+                            data-pos="{{ u.work_position or '' }}"
+                            {% if u.id == current_user.id %}selected{% endif %}>
+                            {{ u.full_name or u.username }} — {{ u.department or 'Tiada Jabatan' }}{% if u.working_grade %} ({{ u.working_grade }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="mt-2 p-2 rounded border" id="selected-user-info" style="font-size:0.85rem; display:none; background-color: var(--bg-body);">
+                        <span class="text-muted">Bahagian:</span> <strong id="info-dept"></strong> &nbsp;|&nbsp;
+                        <span class="text-muted">Jawatan:</span> <strong id="info-pos"></strong>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Regular user: readonly fields -->
+                <div class="col-md-4">
+                    <label class="form-label">Nama pemohon</label>
+                    <input type="text" class="form-control" value="{{ current_user.full_name or current_user.username }}" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Bahagian</label>
+                    <input type="text" class="form-control" value="{{ current_user.department or 'BAHAGIAN TEKNOLOGI MAKLUMAT' }}" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Jawatan</label>
+                    <input type="text" class="form-control" value="{{ current_user.work_position or 'PENOLONG PEGAWAI TEKNOLOGI MAKLUMAT' }}" readonly>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Row 2 -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Tarikh diminta</label>
+                    <input type="text" class="form-control" value="{{ now.strftime('%Y-%m-%d') }}" readonly>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Tarikh pinjaman yang diminta <span class="required-asterisk">*</span></label>
+                    <input type="date" class="form-control" name="borrow_date" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Tarikh pemulangan yang dijangkakan <span class="required-asterisk">*</span></label>
+                    <input type="date" class="form-control" name="return_date" required>
+                </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="row mb-4">
+                <div class="col-md-2 mb-3 mb-md-0">
+                    <label class="form-label">Kategori Aset <span class="required-asterisk">*</span></label>
+                    <select class="form-select" id="aset_select">
+                        <option value="" disabled selected>Pilih kategori</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if session.get('role') in ['admin', 'superadmin'] %}
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#registerAsetModal">
+                            <i class="bi bi-plus-circle"></i> Daftar Aset Baru
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-1 mb-3 mb-md-0">
+                    <label class="form-label">Kuantiti <span class="required-asterisk">*</span></label>
+                    <input type="number" class="form-control" id="aset_quantity" value="1" min="1">
+                </div>
+
+                {% if session.get('role') in ['admin', 'superadmin'] %}
+                <!-- Admin: pick specific item -->
+                <div class="col-md-3 mb-3 mb-md-0" id="specific_aset_container" style="display: none;">
+                    <label class="form-label">Nama Aset <span class="required-asterisk">*</span></label>
+                    <div class="d-flex gap-2">
+                        <select class="form-select" id="specific_aset_select">
+                            <option value="" disabled selected>Pilih item</option>
+                        </select>
+                        <button type="button" class="btn btn-success px-3" id="add_aset_btn" title="Tambah aset ke senarai">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                    <div class="mt-1" id="no_items_msg" style="display:none;">
+                        <small class="text-danger"><i class="bi bi-exclamation-circle"></i> Tiada aset tersedia dalam kategori ini.</small>
+                    </div>
+                </div>
+                {% else %}
+                <!-- User: just pick category, item auto-added -->
+                <div class="col-md-3 mb-3 mb-md-0 d-flex align-items-end">
+                    <button type="button" class="btn btn-success w-100" id="add_category_btn" disabled>
+                        <i class="bi bi-plus-lg me-1"></i> Tambah ke Senarai
+                    </button>
+                </div>
+                {% endif %}
+
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <label class="form-label">Lokasi <span class="required-asterisk">*</span></label>
+                    <select class="form-select" name="lokasi" required>
+                        <option value="" disabled selected>Pilih lokasi</option>
+                        <option value="Bilik Mesyuarat Utama">Bilik Mesyuarat Utama</option>
+                        <option value="Bilik Mesyuarat 1">Bilik Mesyuarat 1</option>
+                        <option value="Bilik Mesyuarat 2">Bilik Mesyuarat 2</option>
+                        <option value="Dewan Serbaguna">Dewan Serbaguna</option>
+                        <option value="Lain-lain">Lain-lain</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Lokasi lain</label>
+                    <input type="text" class="form-control" name="lokasi_lain">
+                </div>
+            </div>
+
+            <!-- Row 4: Aset List -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <label class="form-label">Senarai Aset Dimohon</label>
+                    <div id="aset_list_container" class="border rounded p-3 min-h-50px d-flex flex-wrap gap-2 align-items-center" style="background-color: var(--bg-body);">
+                        {% if session.get('role') in ['admin', 'superadmin'] %}
+                        <span class="text-muted small" id="no_aset_msg">Tiada aset dipilih. Sila pilih kategori, nama aset dan tekan butang '+'.</span>
+                        {% else %}
+                        <span class="text-muted small" id="no_aset_msg">Tiada kategori dipilih. Sila pilih kategori dan tekan "Tambah ke Senarai".</span>
+                        {% endif %}
+                    </div>
+                    <input type="hidden" name="aset" id="aset_hidden_input" required>
+                    <input type="hidden" name="total_quantity" id="total_quantity_input" value="0">
+                </div>
+            </div>
+
+            <!-- Row 5: Tujuan -->
+            <div class="row">
+                <div class="col-12">
+                    <label class="form-label">Tujuan <span class="required-asterisk">*</span></label>
+                    <textarea class="form-control" name="purpose" rows="3" required></textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="footer-action-bar">
+        <button type="submit" class="submit-btn">
+            <i class="bi bi-send"></i> Hantar
+        </button>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const categorySelect = document.getElementById('aset_select');
+        const container = document.getElementById('aset_list_container');
+        const hiddenInput = document.getElementById('aset_hidden_input');
+        const noMsg = document.getElementById('no_aset_msg');
+        const isAdmin = {{ 'true' if session.get('role') in ['admin', 'superadmin'] else 'false' }};
+
+        let selectedAssets = [];
+
+        // Assets data (for admin)
+        const assetsData = {{ assets_data | tojson }};
+
+        // ── ADMIN FLOW ──────────────────────────────────────────
+        if (isAdmin) {
+            const specificSelect = document.getElementById('specific_aset_select');
+            const specificContainer = document.getElementById('specific_aset_container');
+            const addBtn = document.getElementById('add_aset_btn');
+
+            categorySelect.addEventListener('change', function() {
+                const category = this.value;
+                specificSelect.innerHTML = '<option value="" disabled selected>Pilih item</option>';
+                const noItemsMsg = document.getElementById('no_items_msg');
+
+                if (assetsData[category] && assetsData[category].length > 0) {
+                    assetsData[category].forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item;
+                        option.textContent = item;
+                        specificSelect.appendChild(option);
+                    });
+                    specificContainer.style.display = 'block';
+                    noItemsMsg.style.display = 'none';
+                    addBtn.disabled = false;
+                } else {
+                    specificContainer.style.display = 'block';
+                    noItemsMsg.style.display = 'block';
+                    addBtn.disabled = true;
+                }
+            });
+
+            addBtn.addEventListener('click', function() {
+                const val = specificSelect.value;
+                const qty = document.getElementById('aset_quantity').value || 1;
+                if (val) {
+                    const entry = qty > 1 ? `${val} (${qty})` : val;
+                    if (!selectedAssets.includes(entry)) {
+                        selectedAssets.push(entry);
+                        renderAssets();
+                        specificSelect.value = '';
+                        document.getElementById('aset_quantity').value = 1;
+                    } else {
+                        alert('Item ini telah dipilih.');
+                    }
+                } else {
+                    alert('Sila pilih item dari senarai.');
+                }
+            });
+
+        // ── USER FLOW ────────────────────────────────────────────
+        } else {
+            const addCatBtn = document.getElementById('add_category_btn');
+
+            categorySelect.addEventListener('change', function() {
+                addCatBtn.disabled = !this.value;
+            });
+
+            addCatBtn.addEventListener('click', function() {
+                const cat = categorySelect.value;
+                const qty = document.getElementById('aset_quantity').value || 1;
+                if (cat) {
+                    const entry = qty > 1 ? `${cat} (${qty})` : cat;
+                    if (!selectedAssets.includes(entry)) {
+                        selectedAssets.push(entry);
+                        renderAssets();
+                        categorySelect.value = '';
+                        document.getElementById('aset_quantity').value = 1;
+                        addCatBtn.disabled = true;
+                    } else {
+                        alert('Kategori ini telah ditambah.');
+                    }
+                }
+            });
+        }
+
+        // ── SHARED RENDER FUNCTION ───────────────────────────────
+        function renderAssets() {
+            let totalQty = 0;
+            if (selectedAssets.length === 0) {
+                noMsg.style.display = 'block';
+                hiddenInput.value = '';
+                document.getElementById('total_quantity_input').value = 0;
+            } else {
+                noMsg.style.display = 'none';
+                hiddenInput.value = selectedAssets.join(', ');
+                
+                selectedAssets.forEach(asset => {
+                    const match = asset.match(/\((\d+)\)$/);
+                    if (match) {
+                        totalQty += parseInt(match[1]);
+                    } else {
+                        totalQty += 1;
+                    }
+                });
+                document.getElementById('total_quantity_input').value = totalQty;
+            }
+
+            const badges = container.querySelectorAll('.aset-badge');
+            badges.forEach(b => b.remove());
+
+            selectedAssets.forEach((asset, index) => {
+                const badge = document.createElement('span');
+                badge.className = 'aset-badge badge bg-primary text-white px-3 py-2 fs-6 rounded-pill d-flex align-items-center gap-2 shadow-sm';
+                badge.innerHTML = `
+                    <i class="bi bi-box-seam"></i> ${asset}
+                    <i class="bi bi-x-circle ms-1 remove-aset" data-index="${index}" style="cursor:pointer;"></i>
+                `;
+                container.appendChild(badge);
+            });
+
+            document.querySelectorAll('.remove-aset').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectedAssets.splice(parseInt(this.dataset.index), 1);
+                    renderAssets();
+                });
+            });
+        }
+
+        // Form submit validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (this.getAttribute('action') !== "{{ url_for('register_aset') }}") {
+                if (selectedAssets.length === 0) {
+                    e.preventDefault();
+                    alert('Sila pilih sekurang-kurangnya satu aset.');
+                }
+            }
+        });
+    });
+</script>
+
+<style>
+    .hover-text-white:hover {
+        color: white !important;
+    }
+    #behalf_user_select + .ts-wrapper .ts-control {
+        border-radius: 4px;
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+</style>
+
+<!-- Tom Select JS -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectEl = document.getElementById('behalf_user_select');
+    if (selectEl) {
+        const ts = new TomSelect(selectEl, {
+            placeholder: 'Taip nama, jabatan atau gred...',
+            searchField: ['text'],
+            maxOptions: 200,
+            render: {
+                option: function(data, escape) {
+                    const parts = data.text.split(' — ');
+                    const name = parts[0] || '';
+                    const rest = parts[1] || '';
+                    return `<div class="py-1">
+                        <div class="fw-semibold">${escape(name)}</div>
+                        <small class="text-muted">${escape(rest)}</small>
+                    </div>`;
+                }
+            },
+            onChange: function(value) {
+                const opt = selectEl.querySelector(`option[value="${value}"]`);
+                const infoBox = document.getElementById('selected-user-info');
+                if (opt && value) {
+                    document.getElementById('info-dept').textContent = opt.dataset.dept || '—';
+                    document.getElementById('info-pos').textContent = opt.dataset.pos || '—';
+                    infoBox.style.display = 'block';
+                } else {
+                    infoBox.style.display = 'none';
+                }
+            }
+        });
+
+        // Trigger onChange for the default selected user (admin themselves)
+        if (selectEl.value) ts.trigger('change', selectEl.value);
+    }
+});
+</script>
+
+<script>
+function toggleNewCategory(select) {
+    const container = document.getElementById('new_category_container');
+    const input = document.getElementById('new_category_input');
+    if (select.value === '__new__') {
+        container.style.display = 'block';
+        input.required = true;
+    } else {
+        container.style.display = 'none';
+        input.required = false;
+    }
+}
+
+// Handle modal form submit — replace __new__ with typed category
+document.addEventListener('DOMContentLoaded', function() {
+    const modalForm = document.querySelector('#registerAsetModal form');
+    if (modalForm) {
+        modalForm.addEventListener('submit', function(e) {
+            const catSelect = document.getElementById('modal_category_select');
+            const newCatInput = document.getElementById('new_category_input');
+            if (catSelect.value === '__new__') {
+                const newVal = newCatInput.value.trim();
+                if (!newVal) {
+                    e.preventDefault();
+                    alert('Sila masukkan nama kategori baru.');
+                    return;
+                }
+                // Create a hidden option and select it
+                const opt = document.createElement('option');
+                opt.value = newVal;
+                opt.selected = true;
+                catSelect.appendChild(opt);
+                catSelect.value = newVal;
+            }
+        });
+    }
+});
+</script>
+
+{% if session.get('role') in ['admin', 'superadmin'] %}
+<!-- Modal Daftar Aset -->
+<div class="modal fade" id="registerAsetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Daftar Aset Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('register_aset') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Kategori Aset <span class="text-danger">*</span></label>
+                        <select class="form-select" name="category" id="modal_category_select" required onchange="toggleNewCategory(this)">
+                            <option value="" disabled selected>Pilih kategori</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                            <option value="__new__">+ Tambah Kategori Baru...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="new_category_container" style="display:none;">
+                        <label class="form-label">Nama Kategori Baru <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="new_category_input" placeholder="Contoh: Keyboard, Mouse, Webcam...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Aset</label>
+                        <input type="text" class="form-control" name="name" placeholder="Contoh: POOL Laptop Z9">
+                        <div class="form-text">Biarkan kosong untuk menggunakan kombinasi Kategori + No Tag ID</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombor Siri Aset</label>
+                        <input type="text" class="form-control" name="serial_number">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">No Tag ID Aset</label>
+                        <input type="text" class="form-control" name="tag_id">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Kuantiti (Stok) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="quantity" value="1" min="1" required>
+                        <div class="form-text">Bagi aset jenis pukal (cth: kabel), anda boleh masukkan jumlah stok.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Daftar Aset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}Tiket #{{ ticket.id }} | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm mb-3">
+            <i class="bi bi-arrow-left me-1"></i> Kembali ke Papan Pemuka
+        </a>
+        <h2 class="fw-bold mb-0">Butiran Tiket</h2>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        {% if session.get('user_id') == ticket.user_id and ticket.status == 'Open' %}
+        <a href="{{ url_for('edit_ticket', id=ticket.id) }}" class="btn btn-outline-primary shadow-sm me-2">
+            <i class="bi bi-pencil me-1"></i> Kemaskini
+        </a>
+        <form action="{{ url_for('delete_ticket', id=ticket.id) }}" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-outline-danger shadow-sm" onclick="return confirm('Anda pasti mahu padam tiket ini secara kekal? Tindakan ini tidak boleh diubah.');">
+                <i class="bi bi-trash me-1"></i> Padam
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h5 class="m-0 fw-bold">
+            <i class="bi bi-ticket-detailed me-2 text-info"></i> Tiket #{{ ticket.id }}
+        </h5>
+        <div>
+            {% if ticket.status == 'Open' %}
+            <span
+                class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill fs-6">
+                Terbuka
+            </span>
+            {% else %}
+            <span
+                class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill fs-6">
+                Ditutup
+            </span>
+            {% endif %}
+            <span
+                class="category-pill category-{{ ticket.category|lower if ticket.category != 'Lain-lain' else 'others' }} ms-2">
+                <i class="bi bi-tag-fill small opacity-50"></i>
+                {{ ticket.category }}
+            </span>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <h3 class="fw-bold mb-3">{{ ticket.title }}</h3>
+
+        <div class="row mb-4 text-muted small">
+            <div class="col-sm-4">
+                <i class="bi bi-person me-1"></i> <strong>Pengarang:</strong>
+                {{ ticket.author.full_name or ticket.author.username if ticket.author else 'Legacy' }}
+            </div>
+            <div class="col-sm-4">
+                <i class="bi bi-calendar-event me-1"></i> <strong>Dihantar:</strong>
+                {{ ticket.created_at.strftime('%d %B %Y') }}
+            </div>
+            <div class="col-sm-4">
+                <i class="bi bi-clock me-1"></i> <strong>Masa:</strong>
+                {{ ticket.created_at.strftime('%I:%M %p') }}
+            </div>
+        </div>
+
+        <hr class="text-muted border-opacity-25 mb-4">
+
+        <h5 class="fw-bold mb-3">Penerangan</h5>
+        <div class="p-4 rounded-3 border mb-4" style="background: var(--bg-body);">
+            <p class="mb-0" style="white-space: pre-wrap;">{{ ticket.description }}</p>
+        </div>
+
+        {% if ticket.attachment %}
+        <h5 class="fw-bold mb-3">Lampiran</h5>
+        <div class="mb-5">
+            {% if ticket.attachment.endswith('.mp4') %}
+            <video controls class="img-fluid rounded border shadow-sm" style="max-height: 400px;">
+                <source src="{{ url_for('static', filename='img/attachments/' + ticket.attachment) }}" type="video/mp4">
+                Browser anda tidak menyokong tag video.
+            </video>
+            {% else %}
+            <div class="lightbox-trigger" style="cursor: pointer;" data-bs-toggle="modal"
+                data-bs-target="#lightboxModal">
+                <img src="{{ url_for('static', filename='img/attachments/' + ticket.attachment) }}" alt="Lampiran Tiket"
+                    class="img-fluid rounded border shadow-sm" style="max-height: 500px; object-fit: contain;">
+                <div class="form-text mt-2"><i class="bi bi-zoom-in me-1"></i> Klik pada lampiran untuk lihat lebih
+                    dekat.</div>
+            </div>
+
+            <!-- Lightbox Modal -->
+            <div class="modal fade" id="lightboxModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-xl">
+                    <div class="modal-content bg-transparent border-0 shadow-none">
+                        <div class="modal-header border-0 p-0 mb-2">
+                            <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-0 text-center">
+                            <img src="{{ url_for('static', filename='img/attachments/' + ticket.attachment) }}"
+                                class="img-fluid rounded shadow" style="max-height: 90vh;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if ticket.author %}
+        <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-person-badge text-info me-2"></i> Butiran Pengguna &
+            Tugasan
+        </h5>
+        <div class="row p-3 rounded-3 border g-4" style="background: var(--bg-body);">
+            <div class="col-md-2 text-center">
+                {% if ticket.author.profile_picture %}
+                <img src="{{ url_for('static', filename='img/profiles/' + ticket.author.profile_picture) }}"
+                    alt="Profile Picture" class="rounded-circle img-thumbnail"
+                    style="width: 80px; height: 80px; object-fit: cover;">
+                {% else %}
+                <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                    style="width: 80px; height: 80px;">
+                    <i class="bi bi-person fs-3"></i>
+                </div>
+                {% endif %}
+                <div class="mt-2 fw-bold small text-truncate">{{ ticket.author.full_name or ticket.author.username }}</div>
+                <div
+                    class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 small">
+                    {{ ticket.author.role.upper() }}</div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="mb-3">
+                    <span class="text-muted small text-uppercase fw-bold d-block mb-1"><i
+                            class="bi bi-envelope me-1"></i>
+                        Alamat E-mel</span>
+                    <span class="fw-bold">{{ ticket.author.email_address or 'Tiada maklumat' }}</span>
+                </div>
+                <div class="mb-3">
+                    <span class="text-muted small text-uppercase fw-bold d-block mb-1"><i
+                            class="bi bi-telephone me-1"></i>
+                        Nombor Telefon</span>
+                    <span class="fw-bold">{{ ticket.author.phone_number or 'Tiada maklumat' }}</span>
+                </div>
+                <div>
+                    <span class="text-muted small text-uppercase fw-bold d-block mb-1"><i
+                            class="bi bi-person-check me-1"></i>
+                        Status Tugasan</span>
+                    {% if ticket.proposed_assignee %}
+                    <div class="assign-status-badge status-pending">
+                        <i class="bi bi-hourglass-split"></i>
+                        Menunggu penerimaan oleh {{ ticket.proposed_assignee.full_name or
+                        ticket.proposed_assignee.username }}
+                    </div>
+                    {% if session.get('user_id') == ticket.proposed_assignee_id %}
+                    <form action="{{ url_for('accept_assignment', id=ticket.id) }}" method="POST"
+                        class="mt-2 text-start">
+                        <button type="submit" class="btn btn-sm btn-warning rounded-pill shadow-sm fw-bold px-3">
+                            <i class="bi bi-check2-circle me-1"></i> Terima Serahan
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% elif ticket.assigned_to %}
+                    <div class="assign-status-badge status-assigned">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Diambil oleh {{ ticket.assigned_to.full_name or ticket.assigned_to.username }}
+                    </div>
+                    {% else %}
+                    <div class="assign-status-badge status-unassigned">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        Belum Diambil
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Removed duplicated Jawatan/Gred section because it's replaced by the one inside Author Details -->
+
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Admin Management Panel -->
+{% if session.get('role') in ['admin', 'superadmin'] %}
+{% if not ticket.assigned_to_id and not ticket.proposed_assignee_id %}
+<!-- Take Ticket Button (If Unassigned) -->
+<div class="card shadow-sm mb-4 border-start border-4 border-warning" style="background: var(--bg-body);">
+    <div class="card-body p-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="m-0 fw-bold d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill text-warning me-2 fs-4"></i> Tiket Belum Diambil
+            </h5>
+            <p class="text-muted small m-0 mt-1">Anda perlu mengambil alih tiket ini sebelum boleh menguruskannya atau
+                menyerahkannya kepada admin lain.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <form action="{{ url_for('accept_ticket', id=ticket.id) }}" method="POST">
+                <button type="submit" class="btn btn-success px-4 py-2 shadow-sm fw-bold rounded-pill">
+                    <i class="bi bi-check-circle me-1"></i> Terima Tiket
+                </button>
+            </form>
+            <form action="{{ url_for('reject_ticket', id=ticket.id) }}" method="POST">
+                <button type="submit" class="btn btn-danger px-4 py-2 shadow-sm fw-bold rounded-pill" onclick="return confirm('Anda pasti mahu menolak tiket ini?');">
+                    <i class="bi bi-x-circle me-1"></i> Tolak Tiket
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Full Urus Tiket Panel (If Taken or Pending) -->
+{% if session.get('user_id') == ticket.assigned_to_id or session.get('user_id') == ticket.proposed_assignee_id %}
+<div class="card shadow-sm mb-4" style="background: var(--bg-body);">
+    <div class="card-header py-3 border-bottom-0">
+        <h5 class="m-0 fw-bold">
+            <i class="bi bi-gear-fill me-2 text-primary"></i> Urus Tiket
+        </h5>
+    </div>
+    <div class="card-body p-4 pt-0">
+        <form action="{{ url_for('update_ticket_details', id=ticket.id) }}" method="POST">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Tahap Keseriusan</label>
+                    <select name="priority" class="form-select border-0 shadow-sm">
+                        <option value="Rendah" {% if ticket.priority=='Rendah' %}selected{% endif %}>Rendah (Hijau)
+                        </option>
+                        <option value="Sederhana" {% if ticket.priority=='Sederhana' %}selected{% endif %}>Sederhana
+                            (Kuning)</option>
+                        <option value="Tinggi" {% if ticket.priority=='Tinggi' %}selected{% endif %}>Tinggi (Merah)
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Serah Kepada</label>
+                    <select name="assigned_to_id" class="form-select border-0 shadow-sm">
+                        {% set current_val = ticket.proposed_assignee_id or ticket.assigned_to_id %}
+                        <option value="none" {% if not current_val %}selected{% endif %}>-- TIADA --
+                            (Unassigned)</option>
+                        {% for admin in admins %}
+                        <option value="{{ admin.id }}" {% if current_val==admin.id %}selected{% endif %}>
+                            {{ admin.full_name or admin.username }} ({{ admin.role.upper() }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 mt-3 text-end">
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                        <i class="bi bi-save me-1"></i> Kemas Kini Butiran
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endif %}
+
+<!-- Communication Section -->
+{% set can_view_communication = False %}
+{% if session.get('user_id') == ticket.user_id %}
+{% set can_view_communication = True %}
+{% elif ticket.assigned_to_id %}
+{% if session.get('user_id') == ticket.assigned_to_id %}
+{% set can_view_communication = True %}
+{% endif %}
+{% elif session.get('role') in ['admin', 'superadmin'] %}
+{% set can_view_communication = True %}
+{% endif %}
+
+{% if can_view_communication %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header py-3">
+        <h5 class="m-0 fw-bold">
+            <i class="bi bi-chat-dots me-2 text-primary"></i> Bahagian Komunikasi
+        </h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="timeline mt-2">
+            {% if ticket.comments %}
+            {% for comment in ticket.comments|sort(attribute='created_at') %}
+            <div class="mb-4 d-flex align-items-start gap-3">
+                <div class="flex-shrink-0">
+                    {% if comment.user.profile_picture %}
+                    <img src="{{ url_for('static', filename='img/profiles/' + comment.user.profile_picture) }}"
+                        class="rounded-circle border" style="width: 40px; height: 40px; object-fit: cover;">
+                    {% else %}
+                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 40px; height: 40px;">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold">{{ comment.user.full_name or comment.user.username }}
+                            {% if comment.user.role in ['admin', 'superadmin'] %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary small ms-1">Staff</span>
+                            {% endif %}
+                        </span>
+                        <span class="text-muted small">{{ comment.created_at.strftime('%d/%m/%Y %I:%M %p') }}</span>
+                    </div>
+                    <div
+                        class="comment-bubble {% if comment.user.role in ['admin', 'superadmin'] %}admin-comment{% endif %}">
+                        {{ comment.content }}
+
+                        {% if comment.attachment_filename %}
+                        <div class="mt-3">
+                            {% set ext = comment.attachment_filename.split('.')[-1]|lower %}
+                            {% if ext in ['png', 'jpg', 'jpeg', 'gif'] %}
+                            <a href="{{ url_for('static', filename='img/attachments/' + comment.attachment_filename) }}"
+                                data-lightbox="comment-attachment-{{ comment.id }}" data-title="Lampiran Komen">
+                                <img src="{{ url_for('static', filename='img/attachments/' + comment.attachment_filename) }}"
+                                    class="img-fluid rounded border shadow-sm"
+                                    style="max-height: 200px; cursor: zoom-in;" alt="Lampiran Komen">
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('static', filename='img/attachments/' + comment.attachment_filename) }}"
+                                class="btn btn-sm btn-outline-secondary" target="_blank">
+                                <i class="bi bi-file-earmark-arrow-down me-1"></i> Muat Turun Fail
+                                ({{ ext|upper }})
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-chat-quote fs-1 opacity-25 d-block mb-2"></i>
+                Belum ada sebarang maklum balas atau update.
+            </div>
+            {% endif %}
+        </div>
+
+        <hr class="my-4 opacity-10">
+
+        <!-- Comment Form -->
+        <h6 class="fw-bold mb-3">Hantar Maklum Balas Baru</h6>
+        <form action="{{ url_for('add_comment', id=ticket.id) }}" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <textarea name="content" class="form-control" rows="3"
+                    placeholder="Tulis maklum balas anda di sini..."></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="attachment" class="form-label text-muted small fw-bold"><i class="bi bi-paperclip"></i>
+                    Lampiran (Sokongan: Imej & Dokumen)</label>
+                <input class="form-control form-control-sm" type="file" id="attachment" name="attachment">
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                    <i class="bi bi-send me-1"></i> Hantar Maklum Balas
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Actions -->
+<div class="d-flex justify-content-end mb-5">
+    {% if session.get('role') in ['admin', 'superadmin'] %}
+    {% if ticket.status == 'Open' %}
+    <form action="{{ url_for('close_ticket', id=ticket.id) }}" method="POST" class="d-inline ms-2">
+        <button type="submit" class="btn btn-success px-4 shadow-sm">
+            <i class="bi bi-check-circle me-1"></i> Tutup Tiket
+        </button>
+    </form>
+    {% else %}
+    <button class="btn btn-outline-success px-4" disabled>
+        <i class="bi bi-check-all me-1"></i> Tiket Ditutup
+    </button>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

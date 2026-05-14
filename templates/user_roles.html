@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Peranan Pengguna | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold mb-0">Pengurusan Peranan</h2>
+        <p class="text-muted">Naik taraf atau turunkan peranan pengguna untuk menyelia meja bantuan.</p>
+    </div>
+    <div class="col-md-4"></div>
+</div>
+
+
+
+
+<!-- Department Filter Pills -->
+<div class="mb-4 d-flex flex-wrap gap-2 align-items-center">
+    <span class="text-muted small fw-semibold me-1"><i class="bi bi-funnel me-1"></i>Tapis Jabatan:</span>
+    <button class="btn btn-sm dept-pill active-pill" onclick="filterDept('all')" id="pill-all">
+        Semua
+    </button>
+    {% for dept in sorted_departments %}
+    <button class="btn btn-sm dept-pill" onclick="filterDept('{{ dept | replace(' ', '-') }}')"
+        id="pill-{{ dept | replace(' ', '-') }}">
+        {{ dept }}
+        <span class="badge bg-secondary bg-opacity-25 ms-1 rounded-pill">{{ grouped_users[dept]|length }}</span>
+    </button>
+    {% endfor %}
+</div>
+
+<!-- Department Groups -->
+{% for dept in sorted_departments %}
+<div class="dept-group mb-4" data-dept="{{ dept | replace(' ', '-') }}">
+    <div class="card shadow-sm border-0">
+        <!-- Department Header (collapsible) -->
+        <div class="card-header py-3 d-flex align-items-center justify-content-between dept-header" role="button"
+            data-bs-toggle="collapse" data-bs-target="#dept-{{ loop.index }}" aria-expanded="true">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-building text-info"></i>
+                <h5 class="m-0 fw-bold">{{ dept }}</h5>
+                <span class="text-muted small">({{ grouped_users[dept]|length }})</span>
+            </div>
+            <i class="bi bi-chevron-up collapse-icon text-muted" style="transition: transform 0.2s;"></i>
+        </div>
+
+        <!-- User Table for this dept -->
+        <div class="collapse show" id="dept-{{ loop.index }}">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 custom-table">
+                    <thead class="text-muted small text-uppercase">
+                        <tr>
+                            <th scope="col" class="ps-4">Nama Pengguna</th>
+                            <th scope="col">Jabatan</th>
+                            <th scope="col">Peranan Kini</th>
+                            <th scope="col" class="text-end pe-4">Urus Akses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in grouped_users[dept] %}
+                        <tr>
+                            <td class="ps-4 fw-bold">
+                                <div class="d-flex align-items-center">
+                                    {% if user.profile_picture %}
+                                    <img src="{{ url_for('static', filename='img/profiles/' + user.profile_picture) }}"
+                                        alt="Avatar" class="rounded-circle me-3"
+                                        style="width: 38px; height: 38px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                        style="width: 38px; height: 38px;">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                    {% endif %}
+                                    <span class="profile-info-text">{{ user.username }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if user.department %}
+                                <span
+                                    class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill">
+                                    {{ user.department }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.role == 'admin' %}
+                                <span
+                                    class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill">Admin</span>
+                                {% else %}
+                                <span
+                                    class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 rounded-pill">User</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <form action="{{ url_for('user_roles') }}" method="POST"
+                                    class="d-flex justify-content-end align-items-center">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <select name="role"
+                                        class="form-select form-select-sm w-auto d-inline-block me-2 border-0 shadow-sm">
+                                        <option value="user" {% if user.role=='user' %}selected{% endif %}>User</option>
+                                        <option value="admin" {% if user.role=='admin' %}selected{% endif %}>Admin
+                                        </option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-info rounded-pill px-3">Kemas
+                                        Kini</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card shadow-sm border-0">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-people fs-1 mb-3 d-block opacity-50"></i>
+        Tiada pengguna dijumpai.
+    </div>
+</div>
+{% endfor %}
+
+<style>
+    .dept-pill {
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 50px;
+        padding: 4px 14px;
+        font-size: 0.78rem;
+        transition: all 0.2s;
+    }
+
+    .dept-pill:hover {
+        border-color: var(--accent-color);
+        color: var(--accent-color);
+    }
+
+    .dept-pill.active-pill {
+        background: var(--accent-color);
+        color: white !important;
+        border-color: var(--accent-color);
+        font-weight: 600;
+    }
+
+    .dept-header {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .dept-header:hover {
+        background: rgba(0, 188, 212, 0.05);
+    }
+
+    .collapse.show+.collapse-icon,
+    [aria-expanded="false"] .collapse-icon {
+        transform: rotate(180deg);
+    }
+</style>
+
+<script>
+    // Filter by department
+    function filterDept(dept) {
+        const groups = document.querySelectorAll('.dept-group');
+        const pills = document.querySelectorAll('.dept-pill');
+        pills.forEach(p => p.classList.remove('active-pill'));
+
+        if (dept === 'all') {
+            groups.forEach(g => g.style.display = '');
+            document.getElementById('pill-all').classList.add('active-pill');
+        } else {
+            groups.forEach(g => {
+                g.style.display = g.dataset.dept === dept ? '' : 'none';
+            });
+            const activePill = document.getElementById('pill-' + dept);
+            if (activePill) activePill.classList.add('active-pill');
+        }
+    }
+
+    // Rotate chevron icon on collapse toggle
+    document.querySelectorAll('.dept-header').forEach(header => {
+        header.addEventListener('click', function () {
+            const icon = this.querySelector('.collapse-icon');
+            const expanded = this.getAttribute('aria-expanded') === 'true';
+            icon.style.transform = expanded ? 'rotate(180deg)' : 'rotate(0deg)';
+        });
+    });
+</script>
+{% endblock %}

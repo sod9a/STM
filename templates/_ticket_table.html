@@ -1,0 +1,145 @@
+<div class="card shadow-sm mb-5 {{ header_class | default('') }}">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <h5 class="m-0 fw-bold {{ title_text_class | default('text-muted') }}">
+            <i
+                class="{{ title_icon | default('bi-list-stars') }} me-2 {{ title_icon_class | default('text-info') }}"></i>
+            {{ table_title }}
+        </h5>
+
+        {% if show_search %}
+        <!-- Search Bar -->
+        <form action="{{ url_for('dashboard') }}" method="GET" class="d-flex gap-2 ms-auto" style="min-width: 300px;">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0 ps-0 text-muted"
+                    placeholder="Cari ID, tajuk, atau kategori..." value="{{ request.args.get('search', '') }}">
+                <button class="btn btn-primary fw-bold" type="submit">Cari</button>
+                {% if request.args.get('search') %}
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-danger" title="Kosongkan"><i
+                        class="bi bi-x-lg"></i></a>
+                {% endif %}
+            </div>
+        </form>
+
+        <a href="{{ url_for('create_ticket') }}" class="btn btn-primary rounded-pill px-4 btn-sm fw-bold">
+            <i class="bi bi-plus-lg me-1"></i> Permintaan Baru
+        </a>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Status</th>
+                        <th>Kategori</th>
+                        <th>Isu</th>
+                        {% if show_author %}<th>Pengarang</th>{% endif %}
+                        <th>Tarikh Dihantar</th>
+                        <th class="pe-4 text-end">Tindakan</th>
+                    </tr>
+                </thead>
+                <tbody id="{{ skeleton_id | default('skeleton-loading') }}" style="display: none;">
+                    {% for i in range(5) %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="skeleton" style="width: 40px;"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton" style="width: 80px; height: 25px; border-radius: 50px;"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton" style="width: 100px; height: 25px; border-radius: 50px;"></div>
+                        </td>
+                        <td>
+                            <div class="skeleton mb-1" style="width: 200px;"></div>
+                            <div class="skeleton" style="width: 150px; height: 0.8em;"></div>
+                        </td>
+                        {% if show_author %}
+                        <td>
+                            <div class="skeleton" style="width: 100px;"></div>
+                        </td>
+                        {% endif %}
+                        <td>
+                            <div class="skeleton" style="width: 120px;"></div>
+                        </td>
+                        <td class="pe-4 text-end">
+                            <div class="skeleton" style="width: 60px; height: 30px; border-radius: 50px;"></div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tbody id="{{ table_body_id | default('tickets-table-body') }}">
+                    {% if table_tickets %}
+                    {% for ticket in table_tickets %}
+                    <tr style="cursor: pointer;"
+                        onclick="window.location.href='{{ url_for('view_ticket', id=ticket.id) }}';">
+                        <td class="ps-4 fw-bold">#{{ ticket.id }}</td>
+                        <td>
+                            {% if ticket.status == 'Open' %}
+                            <span
+                                class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill">
+                                Terbuka
+                            </span>
+                            {% else %}
+                            <span
+                                class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">
+                                Selesai
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span
+                                    class="category-pill category-{{ ticket.category|lower if ticket.category != 'Lain-lain' else 'others' }}">
+                                    <i class="bi bi-tag-fill small opacity-50"></i>
+                                    {{ ticket.category }}
+                                </span>
+                                <span class="badge rounded-pill priority-{{ ticket.priority|lower }}"
+                                    style="font-weight: 500; font-size: 0.75rem; padding: 0.35rem 0.6rem;">
+                                    <i
+                                        class="bi {% if ticket.priority == 'Rendah' %}bi-info-circle{% elif ticket.priority == 'Sederhana' %}bi-exclamation-triangle{% elif ticket.priority == 'Tinggi' %}bi-shield-exclamation{% else %}bi-question-circle{% endif %} small"></i>
+                                    {{ ticket.priority }}
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ ticket.title }}</div>
+                            <div class="small text-muted text-truncate" style="max-width: 300px;">{{ ticket.description
+                                }}</div>
+                        </td>
+                        {% if show_author %}
+                        <td class="small fw-bold text-info">
+                            {{ ticket.author.username if ticket.author else 'Legacy' }}
+                        </td>
+                        {% endif %}
+                        <td class="text-muted small">{{ ticket.created_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                        <td class="pe-4 text-end" onclick="event.stopPropagation();">
+                            {% if session.get('role') in ['admin', 'superadmin'] and ticket.status == 'Open' %}
+                            <form action="{{ url_for('close_ticket', id=ticket.id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                    Tutup Tiket
+                                </button>
+                            </form>
+                            {% elif ticket.status == 'Closed' %}
+                            <i class="bi bi-check-all text-success fs-4"></i>
+                            {% else %}
+                            <span class="text-muted small">Menunggu Maklum Balas</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="{% if show_author %}7{% else %}6{% endif %}" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>
+                            Tiada tiket dijumpai lagi.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

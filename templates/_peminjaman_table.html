@@ -1,0 +1,102 @@
+<div class="card shadow-sm mb-5">
+    <div class="card-header py-3 {{ header_class }}">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold d-flex align-items-center">
+                <i class="bi {{ title_icon }} {{ title_icon_class }} fs-4 me-2"></i>
+                <span class="{{ title_text_class }}">{{ table_title }}</span>
+            </h5>
+            {% if session.get('role') not in ['admin', 'superadmin'] %}
+            <a href="{{ url_for('create_peminjaman') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Mohon Pinjaman
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-3 text-muted fw-semibold" style="width: 80px;">ID</th>
+                        <th class="px-4 py-3 text-muted fw-semibold">Aset</th>
+                        <th class="px-4 py-3 text-muted fw-semibold" style="width: 100px;">Kuantiti</th>
+                        <th class="px-4 py-3 text-muted fw-semibold">Lokasi</th>
+                        {% if show_author %}
+                        <th class="px-4 py-3 text-muted fw-semibold">Pemohon</th>
+                        {% endif %}
+                        <th class="px-4 py-3 text-muted fw-semibold">Tarikh Pinjam</th>
+                        <th class="px-4 py-3 text-muted fw-semibold">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="{{ skeleton_id }}" style="display: none;">
+                    {% for i in range(3) %}
+                    <tr>
+                        <td class="px-4 py-3"><div class="placeholder-glow"><span class="placeholder col-6"></span></div></td>
+                        <td class="px-4 py-3"><div class="placeholder-glow"><span class="placeholder col-8"></span></div></td>
+                        <td class="px-4 py-3"><div class="placeholder-glow"><span class="placeholder col-4"></span></div></td>
+                        <td class="px-4 py-3"><div class="placeholder-glow"><span class="placeholder col-4"></span></div></td>
+                        {% if show_author %}
+                        <td class="px-4 py-3"><div class="placeholder-glow"><span class="placeholder col-6"></span></div></td>
+                        {% endif %}
+                        <td class="px-4 py-3"><div class="placeholder-glow"><span class="placeholder col-5"></span></div></td>
+                        <td class="px-4 py-3"><div class="placeholder-glow"><span class="placeholder col-6 rounded-pill"></span></div></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tbody id="{{ table_body_id }}">
+                    {% for p in table_peminjaman %}
+                    <tr onclick="window.location.href='{{ url_for('view_peminjaman', id=p.id) }}'" style="cursor: pointer;" class="hover-shadow-sm transition-all">
+                        <td class="px-4 py-3">
+                            <span class="text-secondary fw-semibold">#{{ p.id }}</span>
+                        </td>
+                        <td class="px-4 py-3 fw-medium">
+                            {{ p.aset }}
+                        </td>
+                        <td class="px-4 py-3">
+                            {{ p.quantity or 1 }}
+                        </td>
+                        <td class="px-4 py-3 text-muted">
+                            {{ p.lokasi }}
+                        </td>
+                        {% if show_author %}
+                        <td class="px-4 py-3">
+                            <div class="d-flex align-items-center">
+                                {% if not hide_avatar %}
+                                <div class="avatar-sm rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 32px; height: 32px; background: var(--bg-body);">
+                                    <i class="bi bi-person text-secondary"></i>
+                                </div>
+                                {% endif %}
+                                <span class="text-secondary">{{ p.user.full_name or p.user.username }}</span>
+                            </div>
+                        </td>
+                        {% endif %}
+                        <td class="px-4 py-3 text-secondary">
+                            {{ p.borrow_date.strftime('%d %b %Y') }}
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if p.status == 'Pending' %}
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill"><i class="bi bi-hourglass-split me-1"></i> Pending</span>
+                            {% elif p.status == 'Approved' %}
+                            <span class="badge bg-primary px-3 py-2 rounded-pill"><i class="bi bi-check2-circle me-1"></i> Approved</span>
+                            {% elif p.status == 'Returned' %}
+                            <span class="badge bg-success px-3 py-2 rounded-pill"><i class="bi bi-arrow-return-left me-1"></i> Returned</span>
+                            {% else %}
+                            <span class="badge bg-danger px-3 py-2 rounded-pill"><i class="bi bi-x-circle me-1"></i> {{ p.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{{ 7 if show_author else 6 }}" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-3 text-black-50"></i>
+                                <p class="mb-0">Tiada rekod peminjaman dijumpai.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

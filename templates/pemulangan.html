@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Pemulangan Aset | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center mt-3">
+    <div class="col-md-8">
+        <h2 class="fw-bold mb-0">Pemulangan Aset</h2>
+        <p class="text-muted mt-2">Urus dan lihat rekod aset yang telah dipinjam dan status pemulangan.</p>
+    </div>
+</div>
+
+{% set table_title = 'Senarai Rekod Peminjaman' %}
+{% set table_peminjaman = peminjaman_list %}
+{% set header_class = 'border-bottom-0' %}
+{% set title_icon = 'bi-arrow-return-left' %}
+{% set title_icon_class = 'text-primary' %}
+{% set title_text_class = 'text-dark' %}
+{% set show_author = session.get('role') in ['admin', 'superadmin'] %}
+{% set skeleton_id = 'pemulangan-skeleton' %}
+{% set table_body_id = 'pemulangan-table-body' %}
+{% set hide_avatar = True %}
+
+{% include "_peminjaman_table.html" %}
+
+{% endblock %}

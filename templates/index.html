@@ -1,0 +1,721 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="fw-bold mb-0" style="color: var(--text-primary);">Dashboard</h2>
+        <p class="text-muted mb-0 mt-1">
+            <i class="bi bi-calendar3 me-1"></i>
+            {{ now.strftime('%d %B %Y') if now else 'Hari ini' }} &nbsp;·&nbsp;
+            Selamat datang, <span class="fw-semibold" style="color: var(--accent);">{{ display_name }}</span>!
+        </p>
+    </div>
+</div>
+
+<!-- 3 Tall Panel Cards -->
+<div class="row gy-4" style="align-items: stretch;">
+
+    <!-- ── Panel 1: Permohonan Hari Ini ── -->
+    <div class="col-md-4 d-flex">
+        <div class="dashboard-panel panel-green w-100">
+            <!-- Panel Header -->
+            <div class="panel-header">
+                {% if session.get('role') in ['admin','superadmin'] %}
+                <button class="panel-icon-wrap panel-icon-btn" style="background:rgba(56,193,114,0.15);border:none;" data-bs-toggle="modal" data-bs-target="#modalPeminjaman" title="Lihat semua peminjaman">
+                    <i class="bi bi-box-seam" style="color:var(--accent);"></i>
+                </button>
+                {% else %}
+                <div class="panel-icon-wrap" style="background:rgba(56,193,114,0.15);">
+                    <i class="bi bi-box-seam" style="color:var(--accent);"></i>
+                </div>
+                {% endif %}
+                <span class="panel-badge" style="background:rgba(56,193,114,0.12);color:var(--accent);">Hari ini</span>
+            </div>
+            <!-- Count + Label -->
+            <div class="panel-count">{{ permohonan_hari_ini }}</div>
+            <div class="panel-title">Permohonan Hari Ini</div>
+            <div class="panel-subtitle">Rekod peminjaman baharu</div>
+            <!-- List -->
+            <div class="panel-list mt-3">
+                {% if permohonan_today %}
+                    {% for p in permohonan_today %}
+                    <a href="{{ url_for('view_peminjaman', id=p.id) }}" class="panel-list-item">
+                        <div class="pli-icon" style="background:rgba(56,193,114,0.1);">
+                            <i class="bi bi-box-seam" style="color:var(--accent);"></i>
+                        </div>
+                        <div class="pli-body">
+                            <div class="pli-title">{{ p.aset }}</div>
+                            <div class="pli-meta">
+                                <span>{{ p.lokasi }}</span>
+                                <span class="pli-status pli-status-{{ p.status | lower }}">{{ p.status }}</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="panel-empty">
+                        <i class="bi bi-inbox"></i>
+                        <span>Tiada permohonan hari ini</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Panel 2: Tiket Hari Ini ── -->
+    <div class="col-md-4 d-flex">
+        <div class="dashboard-panel panel-blue w-100">
+            <!-- Panel Header -->
+            <div class="panel-header">
+                {% if session.get('role') in ['admin','superadmin'] %}
+                <button class="panel-icon-wrap panel-icon-btn" style="background:rgba(56,145,220,0.12);border:none;" data-bs-toggle="modal" data-bs-target="#modalTiket" title="Lihat semua tiket">
+                    <i class="bi bi-ticket-perforated" style="color:#3891dc;"></i>
+                </button>
+                {% else %}
+                <div class="panel-icon-wrap" style="background:rgba(56,145,220,0.12);">
+                    <i class="bi bi-ticket-perforated" style="color:#3891dc;"></i>
+                </div>
+                {% endif %}
+                <span class="panel-badge" style="background:rgba(56,145,220,0.10);color:#3891dc;">Hari ini</span>
+            </div>
+            <!-- Count + Label -->
+            <div class="panel-count">{{ tiket_hari_ini }}</div>
+            <div class="panel-title">Tiket Hari Ini</div>
+            <div class="panel-subtitle">Aduan baharu diterima</div>
+            <!-- List -->
+            <div class="panel-list mt-3">
+                {% if tiket_today %}
+                    {% for t in tiket_today %}
+                    <a href="{{ url_for('view_ticket', id=t.id) }}" class="panel-list-item">
+                        <div class="pli-icon" style="background:rgba(56,145,220,0.1);">
+                            <i class="bi bi-ticket-perforated" style="color:#3891dc;"></i>
+                        </div>
+                        <div class="pli-body">
+                            <div class="pli-title">#{{ t.id }} — {{ t.title }}</div>
+                            <div class="pli-meta">
+                                <span>{{ t.category }}</span>
+                                {% if not (t.assigned_to and t.status|lower == 'open') %}
+                                <span class="pli-status pli-status-{{ t.status | lower | replace(' ', '-') }}">{{ t.status }}</span>
+                                {% endif %}
+                            </div>
+                            {% if t.assigned_to %}
+                            <div class="pli-assigned">
+                                <i class="bi bi-person-check me-1"></i>Telah diambil oleh {{ t.assigned_to.full_name or t.assigned_to.username }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="panel-empty">
+                        <i class="bi bi-ticket"></i>
+                        <span>Tiada tiket hari ini</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Panel 3: Pemulangan ── -->
+    <div class="col-md-4 d-flex">
+        <div class="dashboard-panel panel-yellow w-100">
+            <!-- Panel Header -->
+            <div class="panel-header">
+                {% if session.get('role') in ['admin','superadmin'] %}
+                <button class="panel-icon-wrap panel-icon-btn" style="background:rgba(255,193,7,0.12);border:none;" data-bs-toggle="modal" data-bs-target="#modalPemulangan" title="Lihat aset belum dipulangkan">
+                    <i class="bi bi-arrow-return-left" style="color:#c9960c;"></i>
+                </button>
+                {% else %}
+                <div class="panel-icon-wrap" style="background:rgba(255,193,7,0.12);">
+                    <i class="bi bi-arrow-return-left" style="color:#c9960c;"></i>
+                </div>
+                {% endif %}
+                <span class="panel-badge" style="background:rgba(255,193,7,0.12);color:#c9960c;">Belum pulang</span>
+            </div>
+            <!-- Count + Label -->
+            <div class="panel-count">{{ pemulangan_count }}</div>
+            <div class="panel-title">Pemulangan</div>
+            <div class="panel-subtitle">Aset masih dipinjam</div>
+            <!-- List -->
+            <div class="panel-list mt-3">
+                {% if pemulangan_list %}
+                    {% for entry in pemulangan_list %}
+                    {% set p = entry.item %}
+                    {% set days = entry.days_left %}
+                    <a href="{{ url_for('view_peminjaman', id=p.id) }}" class="panel-list-item">
+                        <div class="pli-icon"
+                             style="background:{% if days is not none and days <= 1 %}rgba(220,53,69,0.1){% elif days is not none and days <= 3 %}rgba(255,193,7,0.12){% else %}rgba(255,193,7,0.08){% endif %};">
+                            <i class="bi bi-clock-history"
+                               style="color:{% if days is not none and days <= 1 %}#dc3545{% elif days is not none and days <= 3 %}#c9960c{% else %}#c9960c{% endif %};"></i>
+                        </div>
+                        <div class="pli-body">
+                            <div class="pli-title">{{ p.aset }}</div>
+                            <div class="pli-meta">
+                                {% if days is not none %}
+                                    {% if days < 0 %}
+                                        <span class="pli-urgent">Tamat {{ (-days) }} hari lalu!</span>
+                                    {% elif days == 0 %}
+                                        <span class="pli-urgent">Perlu dipulangkan hari ini!</span>
+                                    {% elif days == 1 %}
+                                        <span class="pli-warn">Baki 1 hari</span>
+                                    {% else %}
+                                        <span>Baki {{ days }} hari</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Tiada tarikh pulangan</span>
+                                {% endif %}
+                                <span>{{ p.return_date.strftime('%d/%m/%Y') if p.return_date else '—' }}</span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="panel-empty">
+                        <i class="bi bi-check-circle"></i>
+                        <span>Tiada aset yang perlu dipulangkan</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% if session.get('role') not in ['admin','superadmin'] %}
+<!-- ── Tiket Belum Selesai (Past Days) ── -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4">
+                <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-warning"></i>
+                    Tiket Belum Selesai (Terdahulu)
+                </h5>
+            </div>
+            <div class="card-body px-4 pb-4">
+                {% if tiket_lama %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background:#f8f9fa;">
+                            <tr>
+                                <th class="py-3 px-3 text-muted" style="font-size:0.75rem; text-transform:uppercase;">ID</th>
+                                <th class="py-3 px-3 text-muted" style="font-size:0.75rem; text-transform:uppercase;">Tajuk</th>
+                                <th class="py-3 px-3 text-muted" style="font-size:0.75rem; text-transform:uppercase;">Kategori</th>
+                                <th class="py-3 px-3 text-muted" style="font-size:0.75rem; text-transform:uppercase;">Tarikh</th>
+                                <th class="py-3 px-3 text-muted" style="font-size:0.75rem; text-transform:uppercase;">Status</th>
+                                <th class="py-3 px-3 text-muted" style="font-size:0.75rem; text-transform:uppercase;">Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in tiket_lama %}
+                            <tr>
+                                <td class="px-3 py-3 text-muted small">#{{ t.id }}</td>
+                                <td class="px-3 py-3 fw-semibold text-dark">{{ t.title }}</td>
+                                <td class="px-3 py-3 text-muted small">{{ t.category }}</td>
+                                <td class="px-3 py-3 text-muted small">{{ t.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td class="px-3 py-3">
+                                    <span class="pli-status pli-status-{{ t.status | lower | replace(' ', '-') }}">{{ t.status }}</span>
+                                </td>
+                                <td class="px-3 py-3">
+                                    <a href="{{ url_for('view_ticket', id=t.id) }}" class="btn btn-sm btn-light border shadow-sm">
+                                        <i class="bi bi-eye"></i> Lihat
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-check-circle text-success" style="font-size: 3rem; opacity: 0.8;"></i>
+                    </div>
+                    <h6 class="fw-semibold text-muted">Tiada tiket tertunggak!</h6>
+                    <p class="small text-muted mb-0">Semua tiket terdahulu anda telah diselesaikan.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if session.get('role') in ['admin','superadmin'] %}
+
+<!-- ── Modal 1: Semua Peminjaman ── -->
+<div class="modal fade" id="modalPeminjaman" tabindex="-1" aria-labelledby="modalPeminjamanLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:20px;overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#e8faf1,#fff);border-bottom:1px solid rgba(56,193,114,0.15);">
+        <h5 class="modal-title fw-bold" id="modalPeminjamanLabel"><i class="bi bi-box-seam me-2" style="color:var(--accent);"></i>Semua Peminjaman (Pending &amp; Dipinjam)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        {% if all_peminjaman %}
+        <table class="table table-hover mb-0">
+          <thead style="background:#f4fbf7;">
+            <tr>
+              <th class="px-4 py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">ID</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Aset</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Pemohon</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Tarikh Pinjam</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in all_peminjaman %}
+            <tr>
+              <td class="px-4 py-3 text-muted small">#{{ p.id }}</td>
+              <td class="py-3 fw-semibold" style="font-size:0.85rem;">{{ p.aset }}</td>
+              <td class="py-3" style="font-size:0.85rem;">{{ p.user.full_name or p.user.username }}</td>
+              <td class="py-3" style="font-size:0.85rem;">{{ p.borrow_date.strftime('%d/%m/%Y') }}</td>
+              <td class="py-3"><span class="pli-status pli-status-{{ p.status | lower }}">{{ p.status }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2 opacity-35"></i>Tiada rekod peminjaman</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal 2: Semua Tiket ── -->
+<div class="modal fade" id="modalTiket" tabindex="-1" aria-labelledby="modalTiketLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:20px;overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#eaf4ff,#fff);border-bottom:1px solid rgba(56,145,220,0.15);">
+        <h5 class="modal-title fw-bold" id="modalTiketLabel"><i class="bi bi-ticket-perforated me-2" style="color:#3891dc;"></i>Semua Tiket Aktif</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        {% if all_tickets_modal %}
+        <table class="table table-hover mb-0">
+          <thead style="background:#f0f7ff;">
+            <tr>
+              <th class="px-4 py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">ID</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Tajuk</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Kategori</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Pengguna</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in all_tickets_modal %}
+            <tr style="cursor:pointer;" onclick="window.location='{{ url_for('view_ticket', id=t.id) }}'">
+              <td class="px-4 py-3 text-muted small">#{{ t.id }}</td>
+              <td class="py-3 fw-semibold" style="font-size:0.85rem;">
+                {{ t.title }}
+                {% if t.assigned_to %}
+                <div class="pli-assigned" style="margin-top: 4px;">
+                    <i class="bi bi-person-check me-1"></i>Telah diambil oleh {{ t.assigned_to.full_name or t.assigned_to.username }}
+                </div>
+                {% endif %}
+              </td>
+              <td class="py-3" style="font-size:0.85rem;">{{ t.category }}</td>
+              <td class="py-3" style="font-size:0.85rem;">{{ t.author.full_name if t.author else '—' }}</td>
+              <td class="py-3">
+                {% if not (t.assigned_to and t.status|lower == 'open') %}
+                <span class="pli-status pli-status-{{ t.status | lower | replace(' ','-') }}">{{ t.status }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-5 text-muted"><i class="bi bi-ticket fs-2 d-block mb-2 opacity-35"></i>Tiada tiket aktif</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal 3: Aset Belum Dipulangkan ── -->
+<div class="modal fade" id="modalPemulangan" tabindex="-1" aria-labelledby="modalPemulanganLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:20px;overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#fff8e8,#fff);border-bottom:1px solid rgba(255,193,7,0.2);">
+        <h5 class="modal-title fw-bold" id="modalPemulanganLabel"><i class="bi bi-arrow-return-left me-2" style="color:#c9960c;"></i>Aset Belum Dipulangkan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        {% if pemulangan_list %}
+        <table class="table table-hover mb-0">
+          <thead style="background:#fffcf0;">
+            <tr>
+              <th class="px-4 py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">ID</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Aset</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Peminjam</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Tarikh Pulang</th>
+              <th class="py-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in pemulangan_list %}
+            {% set p = entry.item %}
+            {% set days = entry.days_left %}
+            <tr>
+              <td class="px-4 py-3 text-muted small">#{{ p.id }}</td>
+              <td class="py-3 fw-semibold" style="font-size:0.85rem;">{{ p.aset }}</td>
+              <td class="py-3" style="font-size:0.85rem;">{{ p.user.full_name or p.user.username }}</td>
+              <td class="py-3" style="font-size:0.85rem;">{{ p.return_date.strftime('%d/%m/%Y') if p.return_date else '—' }}</td>
+              <td class="py-3">
+                {% if days is not none %}
+                  {% if days < 0 %}<span class="pli-urgent">Tertunggak {{ (-days) }}h</span>
+                  {% elif days == 0 %}<span class="pli-urgent">Hari ini!</span>
+                  {% elif days <= 3 %}<span class="pli-warn">{{ days }} hari lagi</span>
+                  {% else %}<span class="text-muted small">{{ days }} hari lagi</span>
+                  {% endif %}
+                {% else %}<span class="text-muted small">—</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-5 text-muted"><i class="bi bi-check-circle fs-2 d-block mb-2 opacity-35"></i>Tiada aset yang perlu dipulangkan</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+{% if session.get('role') in ['admin','superadmin'] %}
+<!-- Analytics & Reports Section -->
+<div class="row mt-5 gy-4">
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <div>
+                <h4 class="fw-bold mb-0">Analisis & Laporan</h4>
+                <p class="text-muted small mb-0">Ringkasan data bantuan teknikal dan penggunaan sumber.</p>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-primary btn-sm dropdown-toggle rounded-3 px-3 py-2 fw-semibold" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-download me-1"></i> Eksport Laporan
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2" style="border-radius: 12px;">
+                    <li><a class="dropdown-item py-2" href="{{ url_for('export_report', type='tickets') }}"><i class="bi bi-ticket-detailed me-2 text-primary"></i>Tiket Aduan</a></li>
+                    <li><a class="dropdown-item py-2" href="{{ url_for('export_report', type='peminjaman') }}"><i class="bi bi-box-seam me-2 text-success"></i>Peminjaman Aset</a></li>
+                    <li><a class="dropdown-item py-2" href="{{ url_for('export_report', type='tempahan') }}"><i class="bi bi-calendar-event me-2 text-warning"></i>Tempahan Bilik</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chart 1: Ticket Categories -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-pie-chart text-primary"></i> Kategori Tiket
+                </h6>
+                <div style="height: 250px;">
+                    <canvas id="ticketChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle text-success"></i> Status Aset Inventory
+                </h6>
+                <div style="height: 250px;">
+                    <canvas id="assetChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 3: Room Usage -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-graph-up text-warning"></i> Trend Tempahan Bilik
+                </h6>
+                <div style="height: 250px;">
+                    <canvas id="roomChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if session.get('role') in ['admin','superadmin'] %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/stats')
+        .then(res => res.json())
+        .then(data => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor = isDark ? '#adb5bd' : '#6c757d';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+            // Ticket Chart
+            new Chart(document.getElementById('ticketChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data.tickets),
+                    datasets: [{
+                        data: Object.values(data.tickets),
+                        backgroundColor: ['#3891dc', '#198754', '#ffc107', '#dc3545', '#6c757d'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, padding: 20, font: { size: 11 } } }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Asset Chart
+            new Chart(document.getElementById('assetChart'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(data.assets),
+                    datasets: [{
+                        data: Object.values(data.assets),
+                        backgroundColor: ['#198754', '#dc3545'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, padding: 20, font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // Room Chart
+            new Chart(document.getElementById('roomChart'), {
+                type: 'line',
+                data: {
+                    labels: data.rooms.map(r => r.month),
+                    datasets: [{
+                        label: 'Tempahan Diluluskan',
+                        data: data.rooms.map(r => r.count),
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255,193,7,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#ffc107'
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, stepSize: 1 }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor }
+                        }
+                    }
+                }
+            });
+        });
+});
+</script>
+{% endif %}
+<style>
+/* Adjust list height for smoother look with charts */
+.panel-list { max-height: 280px; }
+</style>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Dashboard Panels ── */
+.dashboard-panel {
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 480px;
+    border: 1.5px solid var(--border-color);
+    box-shadow: var(--shadow-card);
+}
+.panel-green { background: var(--panel-green); }
+.panel-blue  { background: var(--panel-blue); }
+.panel-yellow{ background: var(--panel-yellow); }
+
+/* Header row */
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.panel-icon-wrap {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+}
+.panel-icon-btn {
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    outline: none;
+}
+.panel-icon-btn:hover {
+    transform: scale(1.12);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+.panel-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 50px;
+}
+
+/* Count & labels */
+.panel-count {
+    font-size: 2.8rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.panel-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.panel-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* List container */
+.panel-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    max-height: 300px;
+    padding-right: 2px;
+}
+.panel-list::-webkit-scrollbar { width: 4px; }
+.panel-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+
+/* List items */
+.panel-list-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+    cursor: pointer;
+}
+.panel-list-item:hover {
+    background: var(--bg-table-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+    color: var(--text-primary);
+}
+.pli-icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+}
+.pli-body { flex: 1; min-width: 0; }
+.pli-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+}
+.pli-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    gap: 6px;
+}
+
+/* Status pills inside list */
+.pli-status {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 50px;
+    flex-shrink: 0;
+}
+.pli-status-pending   { background: rgba(255,193,7,0.15); color: #856404; }
+.pli-status-approved  { background: rgba(56,193,114,0.12); color: #2da55e; }
+.pli-status-rejected  { background: rgba(220,53,69,0.1); color: #dc3545; }
+.pli-status-returned  { background: rgba(108,117,125,0.1); color: #6c757d; }
+.pli-status-open      { background: rgba(56,145,220,0.1); color: #3891dc; }
+.pli-status-closed    { background: rgba(108,117,125,0.1); color: #6c757d; }
+.pli-status-menunggu-maklum-balas { background: rgba(255,193,7,0.12); color: #856404; }
+
+/* Urgency text */
+.pli-urgent { color: #dc3545; font-weight: 700; }
+.pli-warn   { color: #c9960c; font-weight: 600; }
+
+/* Assigned label */
+.pli-assigned {
+    font-size: 0.68rem;
+    color: #3891dc;
+    font-weight: 500;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+}
+
+/* Empty state */
+.panel-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px 16px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    flex: 1;
+}
+.panel-empty i { font-size: 1.8rem; opacity: 0.35; }
+</style>
+{% endblock %}

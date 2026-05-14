@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ms">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Akaun | Meja Bantuan STM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 60%, #0a1520 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .register-card {
+            background: rgba(27, 38, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            width: 100%;
+            max-width: 540px;
+            padding: 2.5rem;
+            color: #e0e1dd;
+        }
+
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #778da9;
+        }
+
+        .form-control,
+        .form-select {
+            background-color: #415a77;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: white;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            transition: all 0.25s;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: #4e6d8c;
+            border-color: #00b4d8;
+            color: white;
+            box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.2);
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: #a0aec0;
+        }
+
+        .form-select option {
+            background-color: #1b263b;
+        }
+
+        .section-divider {
+            color: #00b4d8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0, 180, 216, 0.2);
+            margin-bottom: 1rem;
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, #00b4d8, #0096c7);
+            border: none;
+            border-radius: 10px;
+            padding: 0.8rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+        }
+
+        .btn-register:hover {
+            background: linear-gradient(135deg, #0096c7, #0077b6);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 180, 216, 0.35);
+        }
+
+        .login-link {
+            color: #00b4d8;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .login-link:hover {
+            color: #48cae4;
+        }
+
+        .input-icon-group {
+            position: relative;
+        }
+
+        .input-icon-group .bi {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #778da9;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .input-icon-group .form-control,
+        .input-icon-group .form-select {
+            padding-left: 2.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="register-card">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <img src="{{ url_for('static', filename='img/stm_logo.png') }}" alt="STM Logo"
+                style="max-height: 90px; width: auto;" class="mb-3">
+            <h4 class="fw-bold mb-1">Daftar Akaun Baru</h4>
+            <p class="text-muted small">Sila lengkapkan maklumat di bawah untuk mendaftar.</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }} py-2 px-3 small border-0 mb-3"
+            role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>{{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('register') }}" method="POST">
+            <!-- Section: Maklumat Peribadi -->
+            <div class="section-divider"><i class="bi bi-person-badge me-2"></i>Maklumat Peribadi</div>
+            <div class="mb-3">
+                <label for="full_name" class="form-label">Nama Penuh</label>
+                <div class="input-icon-group">
+                    <i class="bi bi-person"></i>
+                    <input type="text" class="form-control" id="full_name" name="full_name"
+                        placeholder="cth: Ahmad bin Ali" required value="{{ request.form.get('full_name', '') }}">
+                </div>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-6">
+                    <label for="work_position" class="form-label">Jawatan</label>
+                    <div class="input-icon-group">
+                        <i class="bi bi-briefcase"></i>
+                        <input type="text" class="form-control" id="work_position" name="work_position"
+                            placeholder="cth: Pegawai IT" value="{{ request.form.get('work_position', '') }}">
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label for="working_grade" class="form-label">Gred</label>
+                    <div class="input-icon-group">
+                        <i class="bi bi-award"></i>
+                        <input type="text" class="form-control" id="working_grade" name="working_grade"
+                            placeholder="cth: F41" value="{{ request.form.get('working_grade', '') }}">
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="email_address" class="form-label">Alamat E-mel</label>
+                <div class="input-icon-group">
+                    <i class="bi bi-envelope"></i>
+                    <input type="email" class="form-control" id="email_address" name="email_address"
+                        placeholder="cth: ahmad@jdn.gov.my" value="{{ request.form.get('email_address', '') }}">
+                </div>
+            </div>
+            <div class="mb-4">
+                <label for="phone_number" class="form-label">Nombor Telefon</label>
+                <div class="input-icon-group">
+                    <i class="bi bi-telephone"></i>
+                    <input type="tel" class="form-control" id="phone_number" name="phone_number"
+                        placeholder="cth: 0123456789" value="{{ request.form.get('phone_number', '') }}">
+                </div>
+            </div>
+
+            <!-- Section: Maklumat Log Masuk -->
+            <div class="section-divider"><i class="bi bi-lock me-2"></i>Maklumat Log Masuk</div>
+            <div class="mb-3">
+                <label for="username" class="form-label">Nama Pengguna</label>
+                <div class="input-icon-group">
+                    <i class="bi bi-at"></i>
+                    <input type="text" class="form-control" id="username" name="username"
+                        placeholder="Nama pengguna unik" required value="{{ request.form.get('username', '') }}">
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Kata Laluan</label>
+                <div class="input-icon-group">
+                    <i class="bi bi-key"></i>
+                    <input type="password" class="form-control" id="password" name="password"
+                        placeholder="Sekurang-kurangnya 4 aksara" required>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label for="confirm_password" class="form-label">Sahkan Kata Laluan</label>
+                <div class="input-icon-group">
+                    <i class="bi bi-key-fill"></i>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password"
+                        placeholder="Ulangi kata laluan anda" required>
+                </div>
+            </div>
+
+            <div class="d-grid mb-3">
+                <button type="submit" class="btn btn-register btn-primary text-white">
+                    <i class="bi bi-person-plus me-2"></i> Daftar Sekarang
+                </button>
+            </div>
+        </form>
+
+        <div class="text-center text-muted small">
+            Sudah mempunyai akaun? <a href="{{ url_for('login') }}" class="login-link">Log Masuk di sini</a>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Kemaskini Profil | Meja Bantuan STM{% endblock %}
+
+{% block extra_css %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<style>
+    .img-container {
+        max-height: 400px;
+        width: 100%;
+    }
+    #image-to-crop {
+        display: block;
+        max-width: 100%;
+    }
+    .preview-container {
+        width: 120px;
+        height: 120px;
+        overflow: hidden;
+        border-radius: 50%;
+        margin: 0 auto;
+        border: 2px solid var(--accent);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary btn-sm mb-3">
+            <i class="bi bi-arrow-left me-1"></i> Kembali ke Profil
+        </a>
+        <h2 class="fw-bold mb-0">Kemaskini Profil</h2>
+        <p class="text-muted">Kemas kini butiran peribadi dan avatar anda.</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-5">
+                <form id="profileForm" action="{{ url_for('edit_profile') }}" method="POST" enctype="multipart/form-data">
+
+                    <!-- Avatar Upload -->
+                    <div class="mb-5 text-center">
+                        <div class="mb-3" id="currentAvatarContainer">
+                            {% if user.profile_picture %}
+                            <img src="{{ url_for('static', filename='img/profiles/' + user.profile_picture) }}"
+                                alt="Current Profile" id="avatarPreview" class="rounded-circle img-thumbnail mb-2"
+                                style="width: 120px; height: 120px; object-fit: cover;">
+                            {% else %}
+                            <div id="avatarPlaceholder" class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2"
+                                style="width: 120px; height: 120px;">
+                                <i class="bi bi-person fs-1"></i>
+                            </div>
+                            <img id="avatarPreview" class="rounded-circle img-thumbnail mb-2 d-none"
+                                style="width: 120px; height: 120px; object-fit: cover;">
+                            {% endif %}
+                        </div>
+                        <label for="profile_picture_input" class="form-label small fw-bold">Kemaskini Gambar Profil</label>
+                        <input class="form-control form-control-sm mx-auto" type="file" id="profile_picture_input"
+                            accept="image/*" style="max-width: 300px;">
+                        
+                        <!-- Hidden input for the final cropped image -->
+                        <input type="hidden" name="cropped_image" id="cropped_image_data">
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label for="email_address" class="form-label small fw-bold">Alamat E-mel</label>
+                            <input type="email" class="form-control" id="email_address" name="email_address"
+                                value="{{ user.email_address or '' }}" placeholder="name@example.com">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="phone_number" class="form-label small fw-bold">Nombor Telefon</label>
+                            <input type="tel" class="form-control" id="phone_number" name="phone_number"
+                                value="{{ user.phone_number or '' }}" placeholder="+60 1x-xxxxxxx">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="work_position" class="form-label small fw-bold">Jawatan</label>
+                            <input type="text" class="form-control" id="work_position" name="work_position"
+                                value="{{ user.work_position or '' }}" placeholder="e.g. System Administrator">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="working_grade" class="form-label small fw-bold">Gred</label>
+                            <input type="text" class="form-control" id="working_grade" name="working_grade"
+                                value="{{ user.working_grade or '' }}" placeholder="e.g. F41">
+                        </div>
+                    </div>
+
+                    <hr class="my-5 border-opacity-25">
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('profile') }}" class="btn btn-light px-4">Batal</a>
+                        <button type="submit" class="btn btn-primary px-5">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cropping Modal -->
+<div class="modal fade" id="cropperModal" tabindex="-1" aria-labelledby="cropperModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="cropperModalLabel">Potong Gambar Profil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="img-container">
+                    <img id="image-to-crop" src="">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div class="text-muted small">
+                    <i class="bi bi-info-circle me-1"></i> Seret untuk melaras kedudukan gambar.
+                </div>
+                <div>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="cropAndSave">
+                        <i class="bi bi-scissors me-1"></i> Potong & Guna
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+    let cropper;
+    const profilePictureInput = document.getElementById('profile_picture_input');
+    const imageToCrop = document.getElementById('image-to-crop');
+    const cropperModal = new bootstrap.Modal(document.getElementById('cropperModal'));
+    const cropAndSaveBtn = document.getElementById('cropAndSave');
+    const croppedImageDataInput = document.getElementById('cropped_image_data');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+
+    profilePictureInput.addEventListener('change', function (e) {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                imageToCrop.src = event.target.result;
+                cropperModal.show();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    document.getElementById('cropperModal').addEventListener('shown.bs.modal', function () {
+        cropper = new Cropper(imageToCrop, {
+            aspectRatio: 1,
+            viewMode: 1,
+            autoCropArea: 1,
+            responsive: true,
+        });
+    });
+
+    document.getElementById('cropperModal').addEventListener('hidden.bs.modal', function () {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        // Clear input if cancelled and no data was saved yet
+        if (!croppedImageDataInput.value) {
+            profilePictureInput.value = '';
+        }
+    });
+
+    cropAndSaveBtn.addEventListener('click', function () {
+        const canvas = cropper.getCroppedCanvas({
+            width: 400,
+            height: 400,
+        });
+
+        const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        croppedImageDataInput.value = croppedDataUrl;
+        
+        // Update preview on page
+        if (avatarPreview) {
+            avatarPreview.src = croppedDataUrl;
+            avatarPreview.classList.remove('d-none');
+        }
+        if (avatarPlaceholder) {
+            avatarPlaceholder.classList.add('d-none');
+        }
+        
+        cropperModal.hide();
+    });
+</script>
+{% endblock %}

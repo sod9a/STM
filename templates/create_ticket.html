@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Tiket Baru | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="fw-bold mb-0">Permintaan Baru</h2>
+        <p class="text-muted">Buat tiket sokongan baru di bawah.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="m-0 fw-bold text-info"><i class="bi bi-pencil-square me-2"></i>Butiran Isu</h5>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form action="{{ url_for('create_ticket') }}" method="POST" enctype="multipart/form-data">
+                    {% if users %}
+                    <div class="mb-4">
+                        <label for="for_user_id" class="form-label fw-bold">Dicipta Untuk Pengguna <span class="text-muted small fw-normal">(Pilihan)</span></label>
+                        <select class="form-select px-3 py-3" id="for_user_id" name="for_user_id">
+                            <option value="">-- Diri Sendiri --</option>
+                            {% for u in users %}
+                            <option value="{{ u.id }}">{{ u.full_name or u.username }} ({{ u.email_address }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text mt-1 text-info"><i class="bi bi-info-circle me-1"></i>Pilih pengguna jika anda ingin menghantar aduan bagi pihak mereka.</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <label for="title" class="form-label fw-bold">Tajuk Ringkas</label>
+                        <input type="text" class="form-control px-3 py-3" id="title" name="title"
+                            value="{{ prefill_title }}" placeholder="Isu yang dihadapi" required autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="category" class="form-label fw-bold">Kategori</label>
+                        <select class="form-select px-3 py-3" id="category" name="category" required>
+                            <option value="" {% if not prefill_category %}selected{% endif %} disabled>Pilih Kategori</option>
+                            <option value="Hardware" {% if prefill_category == 'Hardware' %}selected{% endif %}>Hardware</option>
+                            <option value="Software" {% if prefill_category == 'Software' %}selected{% endif %}>Software</option>
+                            <option value="Network" {% if prefill_category == 'Network' %}selected{% endif %}>Network</option>
+                            <option value="Lain-lain" {% if prefill_category == 'Lain-lain' %}selected{% endif %}>Lain-lain</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="description" class="form-label fw-bold">Penerangan Terperinci</label>
+                        <textarea class="form-control px-3 py-3" id="description" name="description" rows="8"
+                            placeholder="Isikan butir-butir isu yang berlaku" required>{{ prefill_desc }}</textarea>
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="attachment" class="form-label fw-bold">Lampiran (Imej atau Video)</label>
+                        <input type="file" class="form-control" id="attachment" name="attachment"
+                            accept="image/*,video/mp4">
+                        <div class="form-text mt-1">Format dibenarkan: .png, .jpg, .jpeg, .mp4</div>
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary rounded-pill px-4">
+                            Batal
+                        </a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">
+                            <i class="bi bi-send-fill me-2"></i> Hantar Tiket
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card p-4">
+            <h6 class="fw-bold mb-3">Tips Sokongan</h6>
+            <ul class="list-unstyled small text-muted">
+                <li class="mb-3"><i class="bi bi-check2-circle text-info me-2"></i> Nyatakan masa bermula.</li>
+                <li class="mb-3"><i class="bi bi-check2-circle text-info me-2"></i> Muat naik gambar atau video isu yang
+                    dihadapi.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

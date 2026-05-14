@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<body style="font-family: sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #0d1b2a; color: #fff; padding: 20px; text-align: center;">
+            <h2 style="margin: 0;">Meja Bantuan STM</h2>
+        </div>
+        <div style="padding: 30px;">
+            <h3>Tiket Baru Diterima!</h3>
+            <p>Hai <strong>{{ recipient_name }}</strong>,</p>
+            <p>Tiket sokongan baru telah didaftarkan dalam sistem:</p>
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #00b4d8;">
+                <p><strong>ID Tiket:</strong> #{{ ticket.id }}</p>
+                <p><strong>Kategori:</strong> {{ ticket.category }}</p>
+                <p><strong>Tajuk:</strong> {{ ticket.title }}</p>
+            </div>
+            <p style="margin-top: 20px;">Sila log masuk ke dashboard untuk melihat butiran lanjut.</p>
+            <a href="{{ url_for('dashboard', _external=True) }}"
+                style="display: inline-block; background-color: #00b4d8; color: #000; padding: 10px 20px; text-decoration: none; border-radius: 50px; font-weight: bold; margin-top: 10px;">
+                Ke Dashboard
+            </a>
+        </div>
+        <div style="background-color: #f1f3f5; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+            Ini adalah emel automatik. Sila jangan balas.
+        </div>
+    </div>
+</body>
+
+</html>

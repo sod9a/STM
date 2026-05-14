@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}Peminjaman #{{ peminjaman.id }} | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <div class="d-flex align-items-center mb-3">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 me-2 shadow-sm">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Papan Pemuka
+            </a>
+            {% if peminjaman.status in ['Approved', 'Returned'] %}
+            <a href="{{ url_for('print_peminjaman_form', id=peminjaman.id) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
+                <i class="bi bi-printer me-1"></i> Cetak Borang
+            </a>
+            {% endif %}
+        </div>
+        <h2 class="fw-bold mb-0">Butiran Peminjaman</h2>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h5 class="m-0 fw-bold">
+            <i class="bi bi-box-seam me-2 text-primary"></i> Peminjaman #{{ peminjaman.id }}
+        </h5>
+        <div>
+            {% if peminjaman.status == 'Pending' %}
+            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill fs-6">
+                <i class="bi bi-hourglass-split me-1"></i> Pending
+            </span>
+            {% elif peminjaman.status == 'Approved' %}
+            <span class="badge bg-primary px-3 py-2 rounded-pill fs-6">
+                <i class="bi bi-check2-circle me-1"></i> Approved
+            </span>
+            {% elif peminjaman.status == 'Returned' %}
+            <span class="badge bg-success px-3 py-2 rounded-pill fs-6">
+                <i class="bi bi-arrow-return-left me-1"></i> Returned
+            </span>
+            {% else %}
+            <span class="badge bg-danger px-3 py-2 rounded-pill fs-6">
+                <i class="bi bi-x-circle me-1"></i> {{ peminjaman.status }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <h3 class="fw-bold mb-3">{{ peminjaman.aset }}</h3>
+
+        <div class="row mb-4 text-muted small">
+            <div class="col-md-3 col-sm-6 mb-2">
+                <i class="bi bi-person me-1"></i> <strong>Pemohon:</strong><br>
+                {{ peminjaman.user.full_name or peminjaman.user.username }}
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <i class="bi bi-building me-1"></i> <strong>Bahagian:</strong><br>
+                {{ peminjaman.user.department or 'Tiada maklumat' }}
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <i class="bi bi-telephone me-1"></i> <strong>No. Tel:</strong><br>
+                {{ peminjaman.user.phone_number or 'Tiada maklumat' }}
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <i class="bi bi-calendar-event me-1"></i> <strong>Dihantar pada:</strong><br>
+                {{ peminjaman.created_at.strftime('%d %B %Y, %I:%M %p') }}
+            </div>
+        </div>
+
+        <hr class="text-muted border-opacity-25 mb-4">
+
+        <h5 class="fw-bold mb-3">Maklumat Peminjaman</h5>
+        <div class="p-4 rounded-3 border mb-4" style="background: var(--bg-body);">
+            <div class="row mb-3">
+                <div class="col-md-3 text-muted fw-bold">Kuantiti:</div>
+                <div class="col-md-9">{{ peminjaman.quantity or 1 }} unit</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3 text-muted fw-bold">Lokasi:</div>
+                <div class="col-md-9">{{ peminjaman.lokasi }} {% if peminjaman.lokasi_lain %}({{ peminjaman.lokasi_lain }}){% endif %}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3 text-muted fw-bold">Tarikh Pinjaman:</div>
+                <div class="col-md-9">{{ peminjaman.borrow_date.strftime('%d %B %Y') }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3 text-muted fw-bold">Tarikh Pemulangan:</div>
+                <div class="col-md-9">{{ peminjaman.return_date.strftime('%d %B %Y') if peminjaman.return_date else 'Tidak dinyatakan' }}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-3 text-muted fw-bold">Tujuan:</div>
+                <div class="col-md-9" style="white-space: pre-wrap;">{{ peminjaman.purpose }}</div>
+            </div>
+        </div>
+
+        {% if peminjaman.approved_by %}
+        <div class="alert alert-{% if peminjaman.status == 'Rejected' %}danger{% else %}info{% endif %} d-flex align-items-start" role="alert">
+            <i class="bi bi-info-circle-fill me-3 fs-4 mt-1"></i>
+            <div>
+                <strong class="d-block mb-1">Tindakan oleh Admin:</strong>
+                {% if peminjaman.status == 'Approved' %}
+                    Status telah dikemaskini dan diluluskan oleh {{ peminjaman.approved_by.full_name or peminjaman.approved_by.username }}.
+                {% elif peminjaman.status == 'Rejected' %}
+                    Status telah dikemaskini dan ditolak oleh {{ peminjaman.approved_by.full_name or peminjaman.approved_by.username }}.
+                    {% if peminjaman.reject_reason %}
+                    <div class="mt-2 p-2 rounded border text-danger" style="background: var(--bg-body);">
+                        <strong>Catatan Penolakan:</strong><br>
+                        {{ peminjaman.reject_reason }}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    Status telah dikemaskini kepada {{ peminjaman.status }} oleh {{ peminjaman.approved_by.full_name or peminjaman.approved_by.username }}.
+                {% endif %}
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+{% if session.get('user_id') == peminjaman.user_id and peminjaman.status == 'Pending' %}
+<div class="card shadow-sm mb-4 border-start border-4 border-warning" style="background: var(--bg-body);">
+    <div class="card-header bg-transparent py-3 border-bottom-0">
+        <h5 class="m-0 fw-bold d-flex align-items-center">
+            <i class="bi bi-person-fill me-2 text-warning"></i> Tindakan Anda
+        </h5>
+    </div>
+    <div class="card-body p-4 pt-0">
+        <form action="{{ url_for('cancel_peminjaman', id=peminjaman.id) }}" method="POST" onsubmit="return confirm('Adakah anda pasti mahu membatalkan permohonan ini?');">
+            <button type="submit" class="btn btn-warning px-4 shadow-sm fw-semibold">
+                <i class="bi bi-x-circle me-1"></i> Batal Permohonan
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if session.get('role') in ['admin', 'superadmin'] %}
+<div class="card shadow-sm mb-4 border-start border-4 border-primary" style="background: var(--bg-body);">
+    <div class="card-header bg-transparent py-3 border-bottom-0">
+        <h5 class="m-0 fw-bold d-flex align-items-center">
+            <i class="bi bi-gear-fill me-2 text-primary"></i> Tindakan Admin
+        </h5>
+    </div>
+    <div class="card-body p-4 pt-0">
+        {% if peminjaman.status in ['Pending', 'Approved'] %}
+        <!-- Asset Assignment Form -->
+        <form action="{{ url_for('update_peminjaman_status', id=peminjaman.id) }}" method="POST" id="approveForm">
+            <input type="hidden" name="action" value="{{ 'approve' if peminjaman.status == 'Pending' else 'update_assets' }}">
+            <input type="hidden" name="assigned_assets" id="assigned_assets_input">
+
+            <div class="mb-3">
+                <label class="fw-semibold mb-2">
+                    <i class="bi bi-box-seam me-1 text-primary"></i>
+                    {{ 'Pilih Aset untuk Diberikan kepada Pemohon' if peminjaman.status == 'Pending' else 'Kemaskini Aset yang Dipinjam' }}
+                    <span class="text-danger">*</span>
+                </label>
+
+                <!-- Category + Item Picker -->
+                <div class="row g-2 mb-2">
+                    <div class="col-md-4">
+                        <select class="form-select form-select-sm" id="admin_cat_select">
+                            <option value="" disabled selected>Pilih kategori</option>
+                            {% for cat, items in available_assets.items() %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5" id="admin_item_col" style="display:none;">
+                        <select class="form-select form-select-sm" id="admin_item_select">
+                            <option value="" disabled selected>Pilih item</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3" id="admin_add_col" style="display:none;">
+                        <button type="button" class="btn btn-success btn-sm w-100" id="admin_add_btn">
+                            <i class="bi bi-plus-lg me-1"></i> Tambah
+                        </button>
+                    </div>
+                </div>
+                <div id="admin_no_items" class="text-danger small mb-2" style="display:none;">
+                    <i class="bi bi-exclamation-circle"></i> Tiada aset tersedia dalam kategori ini.
+                </div>
+
+                <!-- Selected assets badges -->
+                <div id="admin_asset_list" class="border rounded p-2 mb-2 d-flex flex-wrap gap-2 align-items-center" style="min-height:42px; background: var(--bg-body);">
+                    <span class="text-muted small" id="admin_no_aset_msg">Belum ada aset dipilih.</span>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                {% if peminjaman.status == 'Pending' %}
+                <button type="submit" class="btn btn-success px-4 shadow-sm" id="approve_submit_btn" disabled>
+                    <i class="bi bi-check-circle me-1"></i> Luluskan & Peruntukkan Aset
+                </button>
+                <button type="button" class="btn btn-danger px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                    <i class="bi bi-x-circle me-1"></i> Tolak
+                </button>
+                {% else %}
+                <button type="submit" class="btn btn-primary px-4 shadow-sm" id="approve_submit_btn" disabled>
+                    <i class="bi bi-pencil-square me-1"></i> Kemaskini Aset
+                </button>
+                {% endif %}
+            </div>
+        </form>
+
+        {# ── Per-item Return Section (only when Approved) ────────────────── #}
+        {% if peminjaman.status == 'Approved' %}
+        <hr class="my-4">
+        <form action="{{ url_for('update_peminjaman_status', id=peminjaman.id) }}" method="POST" id="returnItemsForm">
+            <input type="hidden" name="action" value="return_items">
+
+            <h6 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-arrow-return-left text-primary"></i>
+                Rekod Pemulangan Item
+                <span class="badge bg-secondary ms-1" id="checkedCount">0 / {{ all_aset_names | length }}</span>
+            </h6>
+
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered align-middle mb-0" id="returnTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:3rem;"><i class="bi bi-check2-square"></i></th>
+                            <th>Item</th>
+                            <th style="width:220px;">Tarikh Dipulangkan</th>
+                            <th style="width:140px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in all_aset_names %}
+                        {% set pi = returned_items_map.get(item) %}
+                        <tr class="{% if pi %}table-success{% endif %}">
+                            <td class="text-center">
+                                {% if pi %}
+                                {# Already returned – locked #}
+                                <input type="checkbox" class="form-check-input return-cb" checked disabled>
+                                {% else %}
+                                <input type="checkbox"
+                                    class="form-check-input return-cb"
+                                    name="return_item_{{ item }}"
+                                    value="1"
+                                    id="cb_{{ loop.index }}"
+                                    onchange="toggleDate(this, 'daterow_{{ loop.index }}')">
+                                {% endif %}
+                            </td>
+                            <td>
+                                <label class="mb-0 fw-semibold {% if pi %}text-success{% endif %}"
+                                    {% if not pi %}for="cb_{{ loop.index }}"{% endif %}>
+                                    <i class="bi bi-box-seam me-1"></i>{{ item }}
+                                </label>
+                            </td>
+                            <td>
+                                {% if pi %}
+                                <span class="text-success fw-semibold">
+                                    <i class="bi bi-calendar-check me-1"></i>
+                                    {{ pi.returned_at.strftime('%d %b %Y') }}
+                                </span>
+                                {% else %}
+                                <input type="date"
+                                    class="form-control form-control-sm"
+                                    name="return_date_{{ item }}"
+                                    id="daterow_{{ loop.index }}"
+                                    value="{{ today }}"
+                                    max="{{ today }}"
+                                    disabled
+                                    style="min-width:160px;">
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pi %}
+                                <span class="badge bg-success px-3 py-2 rounded-pill">
+                                    <i class="bi bi-check-circle me-1"></i> Dipulangkan
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill" id="statusbadge_{{ loop.index }}">
+                                    <i class="bi bi-hourglass-split me-1"></i> Belum
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <button type="submit" class="btn btn-success px-4 shadow-sm fw-semibold" id="saveReturnBtn" disabled>
+                    <i class="bi bi-save me-1"></i> Simpan Pemulangan
+                </button>
+                <span class="text-muted small" id="returnHint">Tandakan sekurang-kurangnya satu item.</span>
+            </div>
+        </form>
+        {% endif %}
+
+        <!-- Reject Modal -->
+        <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="rejectForm" action="{{ url_for('update_peminjaman_status', id=peminjaman.id) }}" method="POST">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="rejectModalLabel"><i class="bi bi-x-circle"></i> Tolak Permohonan</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" name="action" value="reject">
+                            <div class="mb-3">
+                                <label for="reject_reason" class="form-label fw-bold">Catatan / Sebab Penolakan (Pilihan)</label>
+                                <textarea class="form-control" id="reject_reason" name="reject_reason" rows="3" placeholder="Sila nyatakan sebab permohonan ditolak supaya pemohon maklum..."></textarea>
+                            </div>
+                            <div class="alert alert-warning mb-0 small">
+                                <i class="bi bi-exclamation-triangle-fill"></i> Tindakan ini tidak boleh diubah semula.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-danger">Pasti & Tolak</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+
+
+        {% else %}
+        <p class="text-muted mb-0">Tiada tindakan lanjutan yang boleh dilakukan pada status ini.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<script>
+(function() {
+    const availableData = {{ available_assets | tojson }};
+    const catSelect = document.getElementById('admin_cat_select');
+    const itemSelect = document.getElementById('admin_item_select');
+    const itemCol = document.getElementById('admin_item_col');
+    const addCol = document.getElementById('admin_add_col');
+    const addBtn = document.getElementById('admin_add_btn');
+    const noItems = document.getElementById('admin_no_items');
+    const assetList = document.getElementById('admin_asset_list');
+    const noMsg = document.getElementById('admin_no_aset_msg');
+    const hiddenInput = document.getElementById('assigned_assets_input');
+    const submitBtn = document.getElementById('approve_submit_btn');
+
+    if (!catSelect) return;
+
+    let selectedItems = {{ pre_assigned_items | tojson }};
+    if (selectedItems.length > 0) {
+        setTimeout(renderSelected, 10);
+    }
+
+    function updateItemDropdown() {
+        const cat = catSelect.value;
+        if (!cat) return;
+        
+        const allItems = availableData[cat] || [];
+        // Filter out items that are already selected and sort A-Z
+        const items = allItems
+            .filter(item => !selectedItems.includes(item.name))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        
+        itemSelect.innerHTML = '<option value="" disabled selected>Pilih item</option>';
+
+        if (items.length > 0) {
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.name;
+                opt.textContent = item.name;
+                itemSelect.appendChild(opt);
+            });
+            itemCol.style.display = 'block';
+            addCol.style.display = 'block';
+            noItems.style.display = 'none';
+            addBtn.disabled = false;
+        } else {
+            itemCol.style.display = 'none';
+            addCol.style.display = 'none';
+            noItems.style.display = 'block';
+        }
+    }
+
+    catSelect.addEventListener('change', updateItemDropdown);
+
+    addBtn.addEventListener('click', function() {
+        const val = itemSelect.value;
+        if (!val) { alert('Sila pilih item.'); return; }
+        if (selectedItems.includes(val)) { alert('Item ini telah dipilih.'); return; }
+        selectedItems.push(val);
+        renderSelected();
+    });
+
+    function renderSelected() {
+        const badges = assetList.querySelectorAll('.sel-badge');
+        badges.forEach(b => b.remove());
+
+        noMsg.style.display = selectedItems.length === 0 ? 'block' : 'none';
+        hiddenInput.value = selectedItems.join(', ');
+        submitBtn.disabled = selectedItems.length === 0;
+
+        selectedItems.forEach((name, idx) => {
+            const span = document.createElement('span');
+            span.className = 'sel-badge badge bg-success text-white px-3 py-2 rounded-pill d-flex align-items-center gap-2';
+            span.innerHTML = `<i class="bi bi-box-seam"></i> ${name}
+                <i class="bi bi-x-circle ms-1" style="cursor:pointer;" data-idx="${idx}"></i>`;
+            assetList.appendChild(span);
+        });
+
+        assetList.querySelectorAll('[data-idx]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                selectedItems.splice(parseInt(this.dataset.idx), 1);
+                renderSelected();
+            });
+        });
+        
+        // Refresh dropdown to remove/add items
+        updateItemDropdown();
+    }
+})();
+
+/* ── Per-item Return Checkbox Logic ─────────────────────────────── */
+function toggleDate(cb, dateId) {
+    const dateInput = document.getElementById(dateId);
+    if (!dateInput) return;
+    dateInput.disabled = !cb.checked;
+    if (cb.checked) {
+        dateInput.focus();
+    }
+    updateReturnUI();
+}
+
+function updateReturnUI() {
+    const cbs   = document.querySelectorAll('.return-cb:not([disabled])');
+    const checked = [...cbs].filter(c => c.checked);
+    const saveBtn = document.getElementById('saveReturnBtn');
+    const hint    = document.getElementById('returnHint');
+    const badge   = document.getElementById('checkedCount');
+
+    if (!saveBtn) return;
+
+    // Count all checked (including locked already-returned ones)
+    const allCbs    = document.querySelectorAll('.return-cb');
+    const totalDone = [...allCbs].filter(c => c.checked).length;
+    const total     = allCbs.length;
+    if (badge) badge.textContent = `${totalDone} / ${total}`;
+
+    if (checked.length > 0) {
+        saveBtn.disabled = false;
+        if (hint) hint.textContent = `${checked.length} item akan direkodkan.`;
+    } else {
+        saveBtn.disabled = true;
+        if (hint) hint.textContent = 'Tandakan sekurang-kurangnya satu item.';
+    }
+}
+
+// Validate date not empty before submit
+const returnItemsForm = document.getElementById('returnItemsForm');
+if (returnItemsForm) {
+    returnItemsForm.addEventListener('submit', function(e) {
+        const cbs = document.querySelectorAll('.return-cb:not([disabled])');
+        let valid = true;
+        cbs.forEach(cb => {
+            if (cb.checked) {
+                const name = cb.name.replace('return_item_', '');
+                // find the date sibling by name
+                const dateInput = returnItemsForm.querySelector(`input[name="return_date_${name}"]`);
+                if (dateInput && !dateInput.value) {
+                    alert(`Sila pilih tarikh pemulangan untuk item: ${name}`);
+                    valid = false;
+                }
+            }
+        });
+        if (!valid) e.preventDefault();
+    });
+}
+</script>
+
+{% endblock %}

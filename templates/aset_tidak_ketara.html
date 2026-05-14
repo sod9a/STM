@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Aset Tidak Ketara | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="fw-bold mb-0" style="color:var(--text-primary);">Aset Tidak Ketara</h2>
+        <p class="text-muted mb-0 mt-1">
+            <i class="bi bi-cloud-arrow-down me-1"></i>
+            Senarai perisian dan lesen aplikasi
+        </p>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for s in softwares %}
+    <div class="col-md-6 col-lg-4">
+        <a href="{{ url_for('view_software', id=s.id) }}" class="text-decoration-none">
+            <div class="card h-100 border-0 shadow-sm" style="border-radius:20px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 2px 12px rgba(0,0,0,0.04)';">
+                <div class="card-body p-4 d-flex align-items-center gap-3">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:50px; height:50px; background:{{ s.bg_color }}; color:{{ s.text_color }};">
+                        <i class="bi {{ s.icon_class }} fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1 fw-bold text-dark" style="font-size:1.1rem;">{{ s.name }}</h5>
+                        <p class="mb-0 text-muted" style="font-size:0.85rem;">{{ s.description }}</p>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% else %}
+    <div class="col-12 text-center text-muted py-5">
+        <p>Tiada rekod aset tidak ketara.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-4 text-center text-muted small">
+    <p>Jika anda mempunyai keperluan untuk menggunakan mana-mana perisian ini, sila buat permohonan peminjaman baharu atau buka tiket bantuan.</p>
+</div>
+{% endblock %}

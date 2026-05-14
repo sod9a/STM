@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Borang KEW.PA-9 - {{ peminjaman.aset }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0; /* Menghilangkan header/footer lalai pelayar (browser) */
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.5;
+            color: black;
+            background: white;
+            margin: 0;
+            padding: 2cm; /* Menggantikan margin @page supaya kandungan tidak terpotong */
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .form-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 3px 6px;
+            vertical-align: top;
+        }
+        .table-no-border th, .table-no-border td {
+            border: none;
+            padding: 4px;
+        }
+        .signature-box {
+            height: 60px;
+        }
+        .dotted-line {
+            border-bottom: 1px dotted black;
+            display: inline-block;
+            width: 80%;
+            margin-bottom: 5px;
+        }
+        
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="no-print" style="margin-bottom: 20px; text-align: center;">
+        <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #198754; color: white; border: none; border-radius: 5px;">Cetak Borang</button>
+        <button onclick="window.close()" style="padding: 10px 20px; cursor: pointer; background: #6c757d; color: white; border: none; border-radius: 5px; margin-left: 10px;">Tutup</button>
+    </div>
+
+    <div class="header-top">
+        <div></div>
+        <div class="text-right">
+            <strong>KEW.PA-9</strong>
+        </div>
+    </div>
+
+    <div class="form-title">
+        BORANG PERMOHONAN PERGERAKAN DAN PINJAMAN ASET
+    </div>
+
+    <!-- Table 1 -->
+    <table>
+        <tr>
+            <td style="width: 25%;">Nama Pemohon :</td>
+            <td style="width: 25%; text-transform: uppercase;">{{ peminjaman.user.full_name or peminjaman.user.username }}</td>
+            <td style="width: 25%;">Tujuan :</td>
+            <td style="width: 25%; text-transform: uppercase;">{{ peminjaman.purpose }}</td>
+        </tr>
+        <tr>
+            <td>Catatan :</td>
+            <td style="text-transform: uppercase;"></td>
+            <td>Tempat Digunakan :</td>
+            <td style="text-transform: uppercase;">{{ peminjaman.lokasi or peminjaman.lokasi_lain }}</td>
+        </tr>
+        <tr>
+            <td>Bahagian :</td>
+            <td style="text-transform: uppercase;">{{ peminjaman.user.department or '-' }}</td>
+            <td>Nama Pengeluar :</td>
+            <td style="text-transform: uppercase;">SOKONGAN TEKNIKAL</td>
+        </tr>
+    </table>
+
+    <!-- Table 2 -->
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2" style="width: 5%; text-align: center;">Bil.</th>
+                <th rowspan="2" style="width: 15%; text-align: center;">No. Siri Pendaftaran</th>
+                <th rowspan="2" style="width: 30%; text-align: center;">Tajuk Aset</th>
+                <th colspan="2" style="text-align: center;">Tarikh</th>
+                <th rowspan="2" style="width: 10%; text-align: center;">(Lulus / Tidak Lulus)</th>
+                <th colspan="2" style="text-align: center;">Tarikh</th>
+            </tr>
+            <tr>
+                <th style="width: 10%; text-align: center;">Dipinjam</th>
+                <th style="width: 10%; text-align: center;">Dijangka Pulang</th>
+                <th style="width: 10%; text-align: center;">Dipulangkan</th>
+                <th style="width: 10%; text-align: center;">Diterima</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set asset_list = peminjaman.aset.split(',') %}
+            {% for asset in asset_list %}
+            <tr>
+                <td style="text-align: center; height: 60px;">{{ loop.index }}</td>
+                <td style="text-align: center;">-</td>
+                <td style="text-transform: uppercase;">{{ asset.strip() }}</td>
+                <td style="text-align: center;">{{ peminjaman.borrow_date.strftime('%d/%m/%Y') }}</td>
+                <td style="text-align: center;">{{ peminjaman.return_date.strftime('%d/%m/%Y') if peminjaman.return_date else '-' }}</td>
+                <td style="text-align: center;">Lulus</td>
+                <td></td>
+                <td></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Table 3: Signatures -->
+    <table>
+        <tr>
+            <td style="width: 50%; padding: 15px;">
+                <div class="signature-box"></div>
+                <div class="dotted-line"></div><br>
+                (Tandatangan Peminjam)<br><br>
+                <table class="table-no-border">
+                    <tr>
+                        <td style="width: 80px;">Nama</td>
+                        <td style="width: 10px;">:</td>
+                        <td style="text-transform: uppercase;">{{ peminjaman.user.full_name or peminjaman.user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td>Jawatan</td>
+                        <td>:</td>
+                        <td style="text-transform: uppercase;">{{ peminjaman.user.work_position or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Tarikh</td>
+                        <td>:</td>
+                        <td>{{ peminjaman.created_at.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                </table>
+            </td>
+            <td style="width: 50%; padding: 15px;">
+                <div class="signature-box"></div>
+                <div class="dotted-line"></div><br>
+                (Tandatangan Pelulus)<br><br>
+                <table class="table-no-border">
+                    <tr>
+                        <td style="width: 80px;">Nama</td>
+                        <td style="width: 10px;">:</td>
+                        <td style="text-transform: uppercase;">{{ peminjaman.approved_by.full_name or peminjaman.approved_by.username if peminjaman.approved_by else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Jawatan</td>
+                        <td>:</td>
+                        <td style="text-transform: uppercase;">{{ peminjaman.approved_by.work_position or '-' if peminjaman.approved_by else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Tarikh</td>
+                        <td>:</td>
+                        <td>{{ peminjaman.created_at.strftime('%d/%m/%Y') }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="width: 50%; padding: 15px;">
+                <div class="signature-box"></div>
+                <div class="dotted-line"></div><br>
+                (Tandatangan Pemulang)<br><br>
+                <table class="table-no-border">
+                    <tr>
+                        <td style="width: 80px;">Nama</td>
+                        <td style="width: 10px;">:</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Jawatan</td>
+                        <td>:</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Tarikh</td>
+                        <td>:</td>
+                        <td></td>
+                    </tr>
+                </table>
+            </td>
+            <td style="width: 50%; padding: 15px;">
+                <div class="signature-box"></div>
+                <div class="dotted-line"></div><br>
+                (Tandatangan Penerima)<br><br>
+                <table class="table-no-border">
+                    <tr>
+                        <td style="width: 80px;">Nama</td>
+                        <td style="width: 10px;">:</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Jawatan</td>
+                        <td>:</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Tarikh</td>
+                        <td>:</td>
+                        <td></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <div style="text-align: center; margin-top: 30px; font-size: 10pt;">
+        M.S. 1/1
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Kemaskini Tiket #{{ ticket.id }} | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="fw-bold mb-0">Kemaskini Tiket #{{ ticket.id }}</h2>
+        <p class="text-muted">Ubah butiran tiket anda di bawah.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="m-0 fw-bold text-info"><i class="bi bi-pencil-square me-2"></i>Butiran Isu</h5>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form action="{{ url_for('edit_ticket', id=ticket.id) }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label for="title" class="form-label fw-bold">Tajuk Ringkas</label>
+                        <input type="text" class="form-control px-3 py-3" id="title" name="title"
+                            value="{{ ticket.title }}" placeholder="Isu yang dihadapi" required autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="category" class="form-label fw-bold">Kategori</label>
+                        <select class="form-select px-3 py-3" id="category" name="category" required>
+                            <option value="" {% if not ticket.category %}selected{% endif %} disabled>Pilih Kategori</option>
+                            <option value="Hardware" {% if ticket.category == 'Hardware' %}selected{% endif %}>Hardware</option>
+                            <option value="Software" {% if ticket.category == 'Software' %}selected{% endif %}>Software</option>
+                            <option value="Network" {% if ticket.category == 'Network' %}selected{% endif %}>Network</option>
+                            <option value="Lain-lain" {% if ticket.category == 'Lain-lain' %}selected{% endif %}>Lain-lain</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="description" class="form-label fw-bold">Penerangan Terperinci</label>
+                        <textarea class="form-control px-3 py-3" id="description" name="description" rows="8"
+                            placeholder="Isikan butir-butir isu yang berlaku" required>{{ ticket.description }}</textarea>
+                    </div>
+
+                    <div class="mb-5">
+                        <label for="attachment" class="form-label fw-bold">Lampiran Tambahan (Pilihan)</label>
+                        {% if ticket.attachment %}
+                        <div class="mb-2 text-muted small"><i class="bi bi-paperclip"></i> Tiket ini sudah mempunyai lampiran: <strong>{{ ticket.attachment }}</strong>. Muat naik baru akan menggantikan lampiran lama.</div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="attachment" name="attachment"
+                            accept="image/*,video/mp4">
+                        <div class="form-text mt-1">Format dibenarkan: .png, .jpg, .jpeg, .mp4</div>
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{{ url_for('view_ticket', id=ticket.id) }}" class="btn btn-outline-secondary rounded-pill px-4">
+                            Batal
+                        </a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">
+                            <i class="bi bi-save me-2"></i> Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card p-4">
+            <h6 class="fw-bold mb-3">Tips Sokongan</h6>
+            <ul class="list-unstyled small text-muted">
+                <li class="mb-3"><i class="bi bi-check2-circle text-info me-2"></i> Nyatakan masa bermula.</li>
+                <li class="mb-3"><i class="bi bi-check2-circle text-info me-2"></i> Muat naik gambar atau video isu yang
+                    dihadapi.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Profil Saya | Meja Bantuan STM{% endblock %}
+
+{% block content %}
+<div class="row mb-5 align-items-center">
+    <div class="col-md-8">
+        <h2 class="fw-bold mb-0">Profil Saya</h2>
+        <p class="text-muted">Uruskan maklumat peribadi dan butiran perhubungan anda.</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('edit_profile') }}" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-pencil-square me-1"></i> Kemaskini Profil
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm text-center p-4">
+            <div class="mb-4">
+                {% if user.profile_picture %}
+                <img src="{{ url_for('static', filename='img/profiles/' + user.profile_picture) }}"
+                    alt="Profile Picture" class="rounded-circle img-thumbnail"
+                    style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                    style="width: 150px; height: 150px;">
+                    <i class="bi bi-person-fill fs-1"></i>
+                </div>
+                {% endif %}
+            </div>
+            <h4 class="fw-bold mb-1">{{ user.full_name or user.username }}</h4>
+            <p class="text-muted mb-2 badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">{{ user.role.upper() }}</p>
+            
+            {% if user.pending_profile_picture %}
+            <div class="alert alert-warning small py-2 mt-2 border-0 shadow-none mb-0">
+                <i class="bi bi-clock-history me-1"></i> Gambar profil baru sedang menunggu kelulusan Admin.
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header py-3 profile-card-header">
+                <h5 class="m-0 fw-bold"><i class="bi bi-person-vcard text-info me-2"></i> Butiran
+                    Pengguna</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row mb-4">
+                    <div class="col-sm-3">
+                        <p class="mb-0 fw-bold text-muted small text-uppercase">Emel Pegawai</p>
+                    </div>
+                    <div class="col-sm-9">
+                        <p class="mb-0 fw-bold">{{ user.email_address or 'Tiada maklumat' }}</p>
+                    </div>
+                </div>
+                <hr class="border-opacity-25">
+
+                <div class="row mb-4">
+                    <div class="col-sm-3">
+                        <p class="mb-0 fw-bold text-muted small text-uppercase">Nombor Telefon</p>
+                    </div>
+                    <div class="col-sm-9">
+                        <p class="mb-0 fw-bold">{{ user.phone_number or 'Tiada maklumat' }}</p>
+                    </div>
+                </div>
+                <hr class="border-opacity-25">
+
+                <div class="row mb-4">
+                    <div class="col-sm-3">
+                        <p class="mb-0 fw-bold text-muted small text-uppercase">Jawatan</p>
+                    </div>
+                    <div class="col-sm-9">
+                        <p class="mb-0 fw-bold">{{ user.work_position or 'Tiada maklumat' }}</p>
+                    </div>
+                </div>
+                <hr class="border-opacity-25">
+
+                <div class="row mb-0">
+                    <div class="col-sm-3">
+                        <p class="mb-0 fw-bold text-muted small text-uppercase">Gred</p>
+                    </div>
+                    <div class="col-sm-9">
+                        <p class="mb-0 fw-bold">{{ user.working_grade or 'Tiada maklumat' }}</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
