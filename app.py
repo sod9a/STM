@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from functools import wraps
 from config import Config
 import os
@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # -------------------------
-# FILE SETUP (SAFE)
+# FILE SETUP
 # -------------------------
 app.config['UPLOAD_FOLDER'] = 'static/img/profiles'
 app.config['ATTACHMENT_FOLDER'] = 'static/img/attachments'
@@ -18,21 +18,14 @@ os.makedirs(app.config['ATTACHMENT_FOLDER'], exist_ok=True)
 
 
 # -------------------------
-# DISABLE DB COMPLETELY
-# -------------------------
-# db.init_app(app)
-# ALL DATABASE FUNCTIONS REMOVED FOR DEMO
-
-
-# -------------------------
-# SAFE HELPERS
+# HELPERS
 # -------------------------
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 
 # -------------------------
-# LOGIN DECORATORS (SAFE)
+# AUTH DECORATORS
 # -------------------------
 def login_required(f):
     @wraps(f)
@@ -54,12 +47,13 @@ def admin_required(f):
 
 
 # -------------------------
-# HOME DASHBOARD (UI ONLY)
+# DASHBOARD (DEMO)
 # -------------------------
 @app.route('/')
 @login_required
 def dashboard():
-    return render_template('index.html',
+    return render_template(
+        'index.html',
         tickets=[],
         open_count=0,
         closed_count=0,
@@ -70,7 +64,7 @@ def dashboard():
 
 
 # -------------------------
-# AUTH (MOCK ONLY)
+# AUTH (DEMO ONLY)
 # -------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -94,7 +88,7 @@ def register():
 
 
 # -------------------------
-# TICKET VIEW (STATIC ONLY)
+# TICKETS (DEMO)
 # -------------------------
 @app.route('/ticket/new')
 @login_required
@@ -108,21 +102,24 @@ def view_ticket(id):
     return render_template('ticket_detail.html', ticket=None)
 
 
+# -------------------------
+# PROFILE
+# -------------------------
 @app.route('/profile')
 @login_required
 def profile():
     return render_template('profile.html', user=session.get('user'))
 
 
-@app.route('/change-password')
+@app.route('/profile/edit')
 @login_required
-def change_password():
-    return render_template('change_password.html')
+def edit_profile():
+    return render_template('edit_profile.html')
 
-    # -----------------------------
-# PASSWORD / PROFILE (UI ONLY)
-# -----------------------------
 
+# -------------------------
+# CHANGE PASSWORD (FIXED - ONLY ONCE)
+# -------------------------
 @app.route('/change-password', methods=['GET', 'POST'])
 @login_required
 def change_password():
@@ -144,45 +141,36 @@ def change_password():
     return render_template('change_password.html')
 
 
-@app.route('/profile')
-@login_required
-def profile():
-    return render_template('profile.html', user=session.get('user'))
-
-
-@app.route('/profile/edit')
-@login_required
-def edit_profile():
-    return render_template('edit_profile.html')
-
-
-# -----------------------------
-# USER ROLES (DEMO ONLY)
-# -----------------------------
+# -------------------------
+# USER ROLES (DEMO)
+# -------------------------
 @app.route('/user_roles')
 @login_required
 def user_roles():
     return render_template('user_roles.html', users=[])
 
 
-# -----------------------------
-# ASSET / INVENTORY (DEMO ONLY)
-# -----------------------------
+# -------------------------
+# ASSETS (DEMO)
+# -------------------------
 @app.route('/aset-tidak-ketara')
 @login_required
 def aset_tidak_ketara():
     return render_template('aset_tidak_ketara.html', softwares=[])
 
 
+# -------------------------
+# PEMINJAMAN (DEMO)
+# -------------------------
 @app.route('/peminjaman')
 @login_required
 def peminjaman():
     return render_template('pemulangan.html', peminjaman_list=[])
 
 
-# -----------------------------
-# ROOM BOOKING (STATIC)
-# -----------------------------
+# -------------------------
+# ROOM BOOKING
+# -------------------------
 @app.route('/tempahan-bilik')
 @login_required
 def tempahan_bilik():
@@ -195,9 +183,9 @@ def tempahan_bilik_events():
     return jsonify([])
 
 
-# -----------------------------
-# STATS (EMPTY FOR DEMO)
-# -----------------------------
+# -------------------------
+# STATS
+# -------------------------
 @app.route('/api/stats')
 @login_required
 def get_stats():
@@ -208,25 +196,25 @@ def get_stats():
     })
 
 
-# -----------------------------
+# -------------------------
 # EXPORT (DISABLED)
-# -----------------------------
+# -------------------------
 @app.route('/report/export/<string:type>')
 @login_required
 def export_report(type):
     return "Export disabled in demo mode", 200
 
 
-# -----------------------------
-# BROADCAST (STATIC)
-# -----------------------------
+# -------------------------
+# BROADCAST (DEMO)
+# -------------------------
 @app.route('/broadcast/manage')
 @login_required
 def manage_broadcasts():
     return render_template('manage_broadcasts.html', broadcasts=[])
 
 
-# -----------------------------
-# MAIN RUN (IMPORTANT FOR VERCEL)
-# -----------------------------
-# REMOVE app.run() for Vercel
+# -------------------------
+# VERCEL ENTRYPOINT (IMPORTANT)
+# -------------------------
+app = app
