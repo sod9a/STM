@@ -1,36 +1,31 @@
-import sys
 import os
-sys.path.append(os.getcwd())
-from app import app, db
-from sqlalchemy import inspect, text
+from sqlalchemy import create_engine, inspect, text
 
-with app.app_context():
-    inspector = inspect(db.engine)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+engine = create_engine(DATABASE_URL)
+
+with engine.connect() as conn:
+    inspector = inspect(engine)
+
     columns = [c['name'] for c in inspector.get_columns('tickets')]
-    print(f"COLUMNS: {columns}")
-    
+    print("COLUMNS:", columns)
+
     if 'assigned_to_id' not in columns:
-        print("MISSING assigned_to_id. Attempting to add...")
-        try:
-            with db.engine.connect() as conn:
-                conn.execute(text("ALTER TABLE tickets ADD COLUMN assigned_to_id INTEGER REFERENCES users(id)"))
-                conn.commit()
-            print("Successfully added assigned_to_id column.")
-        except Exception as e:
-            print(f"Error adding column: {e}")
-    else:
-        print("assigned_to_id column exists.")
-        
+        print("Adding assigned_to_id...")
+        conn.execute(text("""
+            ALTER TABLE tickets
+            ADD COLUMN assigned_to_id INTEGER
+        """))
+        conn.commit()
+        print("DONE")
+
     if not inspector.has_table('comments'):
-        print("MISSING comments table. Creating...")
-        db.create_all()
-        print("Tables created.")
-    else:
-        print("comments table exists.")
+        print("Creating comments table...")
+        conn.execute(text("CREATE TABLE comments (id SERIAL PRIMARY KEY)"))
+        conn.commit()
 
     if not inspector.has_table('notifications'):
-        print("MISSING notifications table. Creating...")
-        db.create_all()
-        print("Notifications table created.")
-    else:
-        print("notifications table exists.")
+        print("Creating notifications table...")
+        conn.execute(text("CREATE TABLE notifications (id SERIAL PRIMARY KEY)"))
+        conn.commit()
