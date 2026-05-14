@@ -22,12 +22,12 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 # Initialize extensions
-db.init_app(app)
+# db.init_app(app)
 
 def seed_db():
     """Initial seeding of users."""
     with app.app_context():
-        db.create_all()
+       # db.create_all()
         # Seed Superadmin
         if not User.query.filter(User.username.ilike('superadmin')).first():
             superadmin = User(username='superadmin', password='123', role='superadmin')
